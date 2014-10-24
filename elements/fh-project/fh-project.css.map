@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "file": "",
+  "sources": ["fh-project.scss"],
+  "names": [],
+  "mappings": "AAAA;EACE,SAAS;;AAEX,MAAM;EACF,QAAQ;EACR,QAAQ;;AAGZ;EACI,aAAa;;AAGjB;EACI,kBAAkB;EAClB,QAAQ;EACR,SAAS;;AAGb;EACI,kBAAkB;EAClB,OAAO;EACP,YAAY"
+}

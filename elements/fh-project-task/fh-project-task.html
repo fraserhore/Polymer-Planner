@@ -1,0 +1,181 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<polymer-element name="fh-project-task" extends="tr" attributes="task editing" on-focus="{{editAction}}" on-blur="{{commitAction}}" on-keyup="{{keyupAction}}" on-fh-project-task-input-demote="{{demoteAction}}" on-fh-project-task-input-promote="{{promoteAction}}">
+  
+  <script>
+    (function () {
+      'use strict';
+
+      var tasksElement = document.querySelector('fh-project'),
+          TAB_KEY = 9;
+
+      Polymer({
+        
+        ready: function () {
+
+          // Collapsable
+          var taskRows = tasksElement.shadowRoot.querySelectorAll('tr');
+
+          // Drag and Drop
+          this.draggable = true;
+          var dragSrcEl = null,
+              sourceID = '',
+              targetID = '',
+              position = 'after';
+          this.addEventListener('dragstart', function (ev) {
+            ev.stopPropagation();
+            sourceID = ev.target.id;
+            // Target (this) element is the source node.
+            this.style.opacity = '0.4';
+            //dragSrcEl = this;
+            //ev.dataTransfer.effectAllowed = 'move';
+            ev.dataTransfer.setData('Text', sourceID);
+            //ev.dataTransfer.setData('text/html', this);
+            //console.log(ev.target.id);
+
+            //ev.dataTransfer.setData("application/json", JSON.stringify(this.templateInstance.model));
+                      
+          }, false);
+          this.addEventListener('dragover', function (ev) {
+            ev.preventDefault();
+            var clientHeight = ev.target.clientHeight,
+                offsetY = ev.offsetY;
+                targetID = ev.target.id;
+                      
+            if(offsetY > (clientHeight/2)) {
+              ev.target.classList.remove("moveBefore");
+              ev.target.classList.add("moveAfter");
+              position = 'after';
+            } else {
+              ev.target.classList.remove("moveAfter");
+              ev.target.classList.add("moveBefore");
+              position = 'before';
+            }
+
+            console.log('height: ' + clientHeight + ' offsetY: ' + offsetY + ' position: ' + position);
+                     
+          }, false);
+          this.addEventListener('dragleave', function (ev) {
+            ev.target.classList.remove("moveBefore");
+            ev.target.classList.remove("moveAfter");
+          }, false);
+          this.addEventListener('drop', function (ev) {
+            ev.stopPropagation();
+            ev.target.classList.remove("moveBefore");
+            ev.target.classList.remove("moveAfter");
+            sourceID = ev.dataTransfer.getData("Text");          
+            this.move(sourceID, targetID, position);
+            // Don't do anything if dropping the same column we're dragging.
+            //this.title += " (" + ev.dataTransfer.getData("application/json") + ")";
+            //this.subtasks.push(JSON.parse(ev.dataTransfer.getData("application/json")));
+            //this.fire('x-task-changed');
+            //console.log(ev.dataTransfer.getData("Text") + ' dropped on ' + ev.target.templateInstance.model.title);
+            //ev.target.templateInstance.model.title = 'wow';
+            //console.log(ev.dataTransfer.getData("text/html"));
+          }, false);
+        },
+        move: function(sourceID, targetID, position) {
+          console.log('source: ' + sourceID + ' target: ' + targetID + ' position: ' + position);
+          var sourceNode = document.getElementById(sourceID),
+              targetNode = document.getElementById(targetID);
+          if(position === 'before') {
+            this.insertBefore(sourceNode, targetNode);  
+          } else {
+            this.insertAfter(sourceNode, targetNode);
+          }
+          this.fire('fh-task-changed');
+        },
+        insertBefore: function(sourceNode, targetNode) {
+          targetNode.parentNode.insertBefore(sourceNode, targetNode);
+        },
+        insertAfter: function (sourceNode, targetNode) {
+            targetNode.parentNode.insertBefore(sourceNode, targetNode.nextSibling);
+        },
+        keyupAction: function(e, detail, sender) {
+          if(e.shiftKey && e.keyCode === TAB_KEY) { 
+            console.log('shift tab');
+            //this.fire('fh-project-task-input-promote');
+          } else if(e.keyCode === TAB_KEY) {
+            e.preventDefault;
+            console.log('tab');
+            this.fire('fh-project-task-input-demote');
+          }
+        },
+        promoteAction: function() {
+          // console.log(document.evaluate('//tr[@parent-id="1"]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null ).snapshottask(0));
+          //console.log(this.shadowRoot.querySelectorAll('tr'));
+          var parent = document.getElementById(this.task.parentid),
+            siblingsAndSelf = tasksElement.shadowRoot.querySelectorAll('tr[parent-id="' + this.task.parentid + '"]');
+          if(parent && siblingsAndSelf.length) {
+            this.insertAfter(this, siblingsAndSelf[siblingsAndSelf.length-1]);
+            this.task.depth = this.task.depth - 1;
+            this.task.parentid = parent.task.parentid;
+            this.fire('fh-task-changed');
+          }
+        },
+        demoteAction: function() {
+          var siblingsAndSelf = tasksElement.shadowRoot.querySelectorAll('tr[parent-id="' + this.task.parentid + '"]'),
+            previousSibling = null;
+          
+          for (var i = siblingsAndSelf.length - 1; i >= 0; i--) {
+            if( siblingsAndSelf[i].id = this.id ) {
+              previousSibling = siblingsAndSelf[i-1];
+              break;
+            }
+          }
+          if(previousSibling) {
+            var children = tasksElement.shadowRoot.querySelectorAll('tr[parent-id="' + previousSibling.id + '"]');
+            if(children.length) {
+              var lastChild = children[children.length-1];
+              this.insertAfter(this, lastChild);
+            }
+            this.task.depth = this.task.depth + 1;
+            this.task.parentid = previousSibling.id;
+            this.fire('fh-task-changed');
+          }
+        },
+        editing: false,
+        editAction: function() {
+          console.log('editAction');
+          this.editing = true;
+          // schedule focus for the end of microtask, when the input will be visible
+          this.asyncMethod(function() {
+            this.$.edit.focus();
+          });
+        },
+        commitAction: function() {
+          console.log('commitAction');
+          if (this.editing) {
+            this.editing = false;
+            for(var key in this.task) {
+              if(typeof this.task[key] == 'string' || this.task[key] instanceof String) {
+                this.task[key] = this.task[key].trim();
+              }
+            }
+            if (this.task.name === '') {
+              this.destroyAction();
+            }
+            this.fire('fh-task-changed');
+          }
+        },
+        cancelAction: function() {
+          console.log('cancelAction');
+          this.editing = false;
+        },
+        taskChanged: function() {
+          console.log('taskChanged');
+        },
+        taskChangeAction: function() {
+          console.log('taskChangedAction');
+          this.fire('fh-task-changed');
+        },
+        destroyAction: function() {
+          console.log('destroyAction');
+          this.fire('fh-destroy-task', this.task);
+        }
+
+      });
+
+    })();
+  </script>
+</polymer-element>

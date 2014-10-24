@@ -1,0 +1,99 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<polymer-element name="fh-project-model" attributes="filter tasks links resources roles minEditableDate maxEditableDate canWriteOnParent canWrite firstDayOfWeek storageId">
+  
+  <script>
+    (function () {
+      'use strict';
+
+      Polymer({
+        
+        filtered: null,
+        completedCount: 0,
+        activeCount: 0,
+        allCompleted: false,
+        ready: function() {
+          this.asyncMethod(function() {
+            this.tasks = this.tasks || [
+             {"id":-1,"name":"Gantt editor","code":"","level":0,"status":"STATUS_ACTIVE","canWrite":true,"start":1396994400000,"duration":21,"end":1399672799999,"startIsMilestone":true,"endIsMilestone":false,"collapsed":false,"assigs":[],"hasChild":true}
+             ,{"id":-2,"name":"coding","code":"","level":1,"status":"STATUS_ACTIVE","canWrite":true,"start":1396994400000,"duration":10,"end":1398203999999,"startIsMilestone":false,"endIsMilestone":false,"collapsed":false,"assigs":[],"description":"","progress":0,"hasChild":true}
+             ,{"id":-3,"name":"gantt part","code":"","level":2,"status":"STATUS_ACTIVE","canWrite":true,"start":1396994400000,"duration":2,"end":1397167199999,"startIsMilestone":false,"endIsMilestone":false,"collapsed":false,"assigs":[],"depends":"","hasChild":false}
+             ,{"id":-4,"name":"editor part","code":"","level":2,"status":"STATUS_SUSPENDED","canWrite":true,"start":1397167200000,"duration":4,"end":1397685599999,"startIsMilestone":false,"endIsMilestone":false,"collapsed":false,"assigs":[],"depends":"3","hasChild":false}
+             ,{"id":-5,"name":"testing","code":"","level":1,"status":"STATUS_SUSPENDED","canWrite":true,"start":1398981600000,"duration":6,"end":1399672799999,"startIsMilestone":false,"endIsMilestone":false,"collapsed":false,"assigs":[],"depends":"2:5","description":"","progress":0,"hasChild":true}
+             ,{"id":-6,"name":"test on safari","code":"","level":2,"status":"STATUS_SUSPENDED","canWrite":true,"start":1398981600000,"duration":2,"end":1399327199999,"startIsMilestone":false,"endIsMilestone":false,"collapsed":false,"assigs":[],"depends":"","hasChild":false}
+             ,{"id":-7,"name":"test on ie","code":"","level":2,"status":"STATUS_SUSPENDED","canWrite":true,"start":1399327200000,"duration":3,"end":1399586399999,"startIsMilestone":false,"endIsMilestone":false,"collapsed":false,"assigs":[],"depends":"6","hasChild":false}
+             ,{"id":-8,"name":"test on chrome","code":"","level":2,"status":"STATUS_SUSPENDED","canWrite":true,"start":1399327200000,"duration":2,"end":1399499999999,"startIsMilestone":false,"endIsMilestone":false,"collapsed":false,"assigs":[],"depends":"6","hasChild":false}
+             ];
+          });
+        },
+        filterChanged: function() {
+          this.filtertasks();
+        },
+        tasksChanged: function() {
+          this.completedCount = this.tasks.filter(this.filters.completed).length;
+          this.activeCount = this.tasks.length - this.completedCount;
+          this.allCompleted = this.completedCount && !this.activeCount;
+          this.filtertasks();
+          if (this.storage) {
+            this.storage.value = this.tasks;
+            console.log(this.tasks);
+            this.storage.save();
+          }
+        },
+        storageIdChanged: function() {
+          this.storage = document.querySelector('#' + this.storageId);
+          this.storage && (this.tasks = this.storage.value);
+        },
+        filtertasks: function() {
+          var fn = this.filters[this.filter];
+          this.filtered = fn ? this.tasks.filter(fn) : this.tasks;
+        },
+        newtask: function(name, start, finish, work) {
+          console.log("newtask");
+          title = String(title).trim();
+          if (title) {
+            var task = {
+              id: 0,
+              parentid: 100,
+              depth: 0,
+              title: title,
+              start: start,
+              finish: finish,
+              work: work,
+              completed: false
+            };
+            console.log(task);
+            this.tasks.push(task);
+            this.tasksChanged();
+          }
+        },
+        destroytask: function(task) {
+          var i = this.tasks.indexOf(task);
+          if (i >= 0) {
+            this.tasks.splice(i, 1);
+          }
+          this.tasksChanged();
+        },
+        cleartasks: function(){
+          this.tasks = this.tasks.filter(this.filters.active);
+        },
+        settasksCompleted: function(completed) {
+          this.tasks.forEach(function(task) {
+            task.completed = completed;
+          });
+          this.tasksChanged();
+        },
+        filters: {
+          active: function(task) {
+            return !task.completed;
+          },
+          completed: function(task) {
+            return task.completed;
+          }
+        }
+
+      });
+
+    })();
+  </script>
+</polymer-element>

@@ -1,0 +1,66 @@
+{
+  "calendars" : [ {
+    "UID" : 0,
+    "name" : "",
+    "nonWorkingDays" : [ {
+      "endDate" : "",
+      "name" : "",
+      "startDate" : ""
+    } ]
+  } ],
+  "name" : "ISSAT",
+  "orgUnits" : [ {
+    "name" : "Advisory Field Support",
+    "uid" : 0
+  }, {
+    "name" : "Training",
+    "uid" : 0
+  } ],
+  "roles" : "",
+  "settings" : "",
+  "tasks" : [ {
+    "actualWork" : 0,
+    "assignedWork" : 0,
+    "assignments" : 0,
+    "duration" : 0,
+    "endDate" : 0,
+    "estimatedWork" : 0,
+    "name" : "Task 1",
+    "scheduledWork" : 0,
+    "startDate" : 0,
+    "uid" : 0
+  }, {
+    "actualWork" : 0,
+    "assignedWork" : 0,
+    "duration" : 0,
+    "endDate" : 0,
+    "estimatedWork" : 0,
+    "name" : "Task 2",
+    "scheduledWork" : 0,
+    "startDate" : 0,
+    "uid" : 0
+  }, {
+    "actualWork" : 0,
+    "assignedWork" : 0,
+    "duration" : 0,
+    "endDate" : 0,
+    "estimatedWork" : 10,
+    "name" : "Task 3",
+    "scheduledWork" : 0,
+    "startDate" : 0,
+    "uid" : 0
+  } ],
+  "uid" : 1,
+  "users" : [ {
+    "name" : "",
+    "phoneNumbers" : [ {
+      "number" : 0,
+      "type" : "mobile"
+    }, {
+      "number" : 0,
+      "type" : "office"
+    } ],
+    "settings" : "",
+    "uid" : ""
+  } ]
+}

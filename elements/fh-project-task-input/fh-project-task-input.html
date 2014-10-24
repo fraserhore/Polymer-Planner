@@ -1,0 +1,33 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<polymer-element name="fh-project-task-input" extends="input" on-keyup="{{keyupAction}}" on-keypress="{{keypressAction}}">
+  <script>
+    (function () {
+      'use strict';
+
+      var ENTER_KEY = 13,
+        ESC_KEY = 27,
+        TAB_KEY = 9;
+
+      Polymer({
+        keypressAction: function(e, detail, sender) {
+          // Listen for enter on keypress but esc on keyup, because
+          // IE doesn't fire keyup for enter.
+          if (e.keyCode === ENTER_KEY) {
+            this.fire('fh-project-task-input-commit');
+          }
+        },
+        keyupAction: function(e, detail, sender) {
+          if (e.keyCode === ESC_KEY) {
+            this.fire('fh-project-task-input-cancel');
+          } else if(e.shiftKey && e.keyCode === TAB_KEY) { 
+            this.fire('fh-project-task-input-promote');
+          } else if(e.keyCode === TAB_KEY) {
+            this.fire('fh-project-task-input-demote');
+          }
+        }
+      });
+
+    })();
+  </script>
+</polymer-element>

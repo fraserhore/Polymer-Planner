@@ -1,0 +1,459 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/core-selector/core-selector.html">
+<link rel="import" href="../../bower_components/core-icons/core-icons.html">
+<link rel="import" href="../../bower_components/firebase-element/firebase-element.html">
+<link rel="import" href="../../bower_components/polymer-filters/polymer-filters.html">
+<link rel="import" href="../fh-project-task-input/fh-project-task-input.html">
+<link rel="import" href="../fh-project-task/fh-project-task.html">
+
+
+<polymer-element name="fh-project-grid-editor" attributes="route data modelId">
+  <template>
+    <link rel="stylesheet" href="fh-project-grid-editor.css">
+
+    <firebase-element id="base" location="https://fhplanner.firebaseio.com/projects/issat" data="{{data}}" keys="{{keys}}" childEvents on-child-changed="{{childChanged}}"></firebase-element>
+    <core-selector id="taskSelector" target="{{$.taskapp}}" tasksSelector="tr" on-core-select="{{selectAction}}"></core-selector>
+
+    <section>
+      <section id="main"> 
+        <button id="move-up-button" on-click="{{moveUpAction}}">Up</button>
+        <button id="move-down-button" on-click="{{moveDownAction}}">Down</button>
+        <button id="move-demote-button" on-click="{{demoteAction}}">Demote</button>
+        <button id="move-promote-button" on-click="{{promoteAction}}">Promote</button>      
+
+        <table id="task-grid-table">
+          <thead>
+            <tr style="height:40px">
+              <th style="width:35px;"></th>
+              <th style="width:25px;"></th>
+              <th style="width:30px;">code/short name</th>
+              <th style="width:300px;">name</th>
+              <th style="width:80px;">start</th>
+              <th style="width:80px;">end</th>
+              <th style="width:50px;">dur.</th>
+              <th style="width:50px;">dep.</th>
+              <th style="width:200px;">assignees</th>
+              <th style="width:50px;">work</th>
+              <th style="width:50px;">intensity</th>
+              <th style="width:50px;">urgency</th>
+            </tr>
+          </thead>
+          <tbody id="taskapp">
+            <template repeat="{{task, index in data.tasks}}">
+              <tr id="{{task.id}}" task="{{task}}" level="{{task.level}}" on-dblclick="{{editAction}}" on-keyup="{{keyupAction}}" on-keypress="{{keypressAction}}">
+                <template if="{{task.editMode}}">
+                  <th>
+                    <span>{{index+1}}</span> <core-icon icon="create"></core-icon>
+                  </th>
+                  <td>
+                    <div class="taskStatus cvcColorSquare" status="{{task.status}}"></div>
+                  </td>
+                  <td>
+                    <input name="code" value="{{task.code}}" on-change="{{changeAction}}" on-blur="">
+                  </td>
+                  <td style="padding-left:{{18+(task.level*10)}}px;">
+                    <div class="{{task.hasChild ? 'exp-controller expcoll exp':'exp-controller'}}" align="center"></div>
+                    <input name="name" value="{{task.name}}" placeholder="name" on-change="{{changeAction}}">
+                  </td>
+                  <td>
+                    <input name="start"  value="{{task.startDate}}" max="{{task.endDate}}" type="date" on-change="{{changeAction}}">
+                  </td>
+                  <td>
+                    <input name="end" value="{{task.endDate}}" min="{{task.startDate}}" type="date" on-change="{{changeAction}}">
+                  </td>
+                  <td>
+                    <input name="duration" value="{{task.duration}}" on-change="{{changeAction}}">
+                  </td>
+                  <td>
+                    <input name="depends" value="{{task.depends}}" on-change="{{changeAction}}">
+                  </td>
+                  <td></td>
+                  <td>
+                    <input name="work" value="{{task.estimatedWork}}" on-change="{{changeAction}}">
+                  </td>
+                  <td>{{(task.estimatedWork ? task.estimatedWork/task.duration*100 : 0) | round}}%</td>
+                  <td>{{(task.estimatedWork ? task.estimatedWork/task.duration*100 : 0) | round}}%</td>
+                </template>
+                <template if="{{!task.editMode}}">
+                  <th>
+                    <span>{{index+1}}</span> <core-icon icon="create"></core-icon>
+                  </th>
+                  <td class="">
+                    <div class="taskStatus cvcColorSquare" status="{{task.status}}"></div>
+                  </td>
+                  <td>{{task.code}}</td>
+                  <td style="padding-left:{{18+(task.level*10)}}px;">
+                    <span class="{{task.hasChild ? 'exp-controller expcoll exp':'exp-controller'}}" align="center"></span>
+                    {{task.name}}
+                  </td>
+                  <td>{{task.startDate}}</td>
+                  <td>{{task.endDate}}</td>
+                  <td>{{task.duration}}</td>
+                  <td>{{task.depends}}</td>
+                  <td></td>
+                  <td>{{task.estimatedWork}}</td>
+                  <td>{{(task.estimatedWork ? task.estimatedWork/task.duration*100 : 0) | round}}%</td>
+                  <td>{{(task.estimatedWork ? task.estimatedWork/task.duration*100 : 0) | round}}%</td>
+                </template>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </section>
+    </section>
+  </template>
+  <script>
+    (function () {
+      'use strict';
+
+      var ENTER_KEY = 13,
+          ESC_KEY = 27,
+          TAB_KEY = 9,
+          ARROW_UP_KEY = 38,
+          ARROW_DOWN_KEY = 40;
+
+      Polymer({
+
+        observe: {
+          // dataChanged only called if data is pointed at a new object
+          // changes to data's _properties or sub-properites are not observed_
+          data: 'dataChanged',
+          // dataNameChanged called if `data.name` changes
+          'data.tasks[0].name': 'dataNameChanged'
+        },
+        dataChanged: function() {
+          console.dir(this.data);
+        },
+        dataNameChanged: function() {
+          console.log('dataNameChanged');
+          //this.$.base.commitProperty('tasks');
+        },
+        childChanged: function() {
+          console.log('childChanged');
+        },
+        changeAction: function() {
+          console.log('changeAction');
+          this.$.base.commitProperty('tasks');
+        },
+        created: function(){
+          //if(!this.data) this.data = [];
+          //if(!this.columns) this.columns = [];
+          this.undoStack = [];
+
+        },
+        ready: function() {
+          //console.log(this.shadowRoot.querySelectorAll('tr'));
+          //console.log(this.$.base.data);
+        },
+        attached: function() {
+          this.async(function() {
+            //console.log(this.shadowRoot.querySelectorAll('tr'));
+            
+          });
+        },
+        modelIdChanged: function() {
+          //this.model = document.querySelector('fh-project').shadowRoot.querySelector('#' + this.modelId);
+        },
+        modelChanged: function() {
+          //console.log('modelChanged');
+        },
+        routeChanged: function() {
+          this.model && (this.model.filter = this.route);
+        },
+        selectAction: function(event,detail,sender) {
+          //console.log('selectAction');
+          //console.log(event.detail.item + ': ' + event.detail.isSelected);
+          if(event.detail.isSelected) {
+            //event.detail.item.querySelector('input[name="name"]').focus();
+          } else {
+            event.detail.item.templateInstance.model.task.editMode = false;
+          }
+        },
+        
+        editing: false,
+        editAction: function(event, detail, sender) {
+          //console.log('editAction');
+          
+          event.target.templateInstance.model.task.editMode = true;
+          //console.log(this.shadowRoot.querySelector('td'));
+          //this.shadowRoot.querySelector('input[name="name"]').focus();
+          // schedule focus for the end of microtask, when the input will be visible
+          this.asyncMethod(function() {
+            //this.$.edit.focus();
+          });
+        },
+        commitAction: function() {
+          //console.log('commitAction');
+          if (this.editing) {
+            this.editing = false;
+            for(var key in this.task) {
+              if(typeof this.task[key] == 'string' || this.task[key] instanceof String) {
+                this.task[key] = this.task[key].trim();
+              }
+            }
+            if (this.task.name === '') {
+              this.destroyAction();
+            }
+            this.fire('fh-task-changed');
+          }
+        },
+        addTaskAction: function() {
+          //console.log(this.model);
+          this.model.newtask(
+            this.$['new-task-name'].value,
+            this.$['new-task-start'].value,
+            this.$['new-task-finish'].value, 
+            this.$['new-task-work'].value);
+          // when polyfilling Object.observe, make sure we update immediately
+          Platform.flush();
+          this.$['new-task-name'].value = '';
+          this.$['new-task-work'].value = '';
+        },
+        cancelAddTaskAction: function() {
+          this.$['new-task-name'].value = '';
+          this.$['new-task-work'].value = '';
+        },
+        taskChangedAction: function() {
+          //console.log('taskChangedAction');
+          this.model && this.model.tasksChanged();
+        },
+        destroytaskAction: function(e, detail) {
+          this.model.destroytask(detail);
+        },
+        toggleAllCompletedAction: function(e, detail, sender) {
+          this.model.settasksCompleted(sender.checked);
+        },
+        clearCompletedAction: function() {
+          this.model.cleartasks();
+        },
+        insertBefore: function(sourceNode, targetNode) {
+          targetNode.parentNode.insertBefore(sourceNode, targetNode);
+        },
+        insertAfter: function (sourceNode, targetNode) {
+          targetNode.parentNode.insertBefore(sourceNode, targetNode.nextSibling);
+        },
+        move: function (old_index, new_index) {
+          var tasks = this.model.tasks,
+            task,
+            subtreeLength = 0;
+
+          // correct for passing of negative index numbers
+            while (old_index < 0) {
+                old_index += tasks.length;
+            }
+            while (new_index < 0) {
+                new_index += tasks.length;
+            }
+            if (new_index >= tasks.length) {
+                var k = new_index - tasks.length;
+                while ((k--) + 1) {
+                    tasks.push(undefined);
+                }
+            }
+
+            // determine number of subtree tasks to move with the task
+            task = tasks[old_index];
+            for (var i = old_index+1; i < tasks.length; i++) {
+              if(tasks[i].depth === task.depth) {
+                break
+              } else {
+                subtreeLength++
+              }
+            };
+
+            // if moving down, adjust for the removal of the subtree tasks
+            if(new_index > old_index) {
+              new_index = new_index - subtreeLength;
+            }
+
+            // Move the task and its subtree
+            //tasks.splice(new_index, 0, tasks.splice(old_index, 1)[0]);
+            tasks.splice.apply(tasks, [new_index, 0].concat(tasks.splice(old_index, 1+subtreeLength)));
+        },
+        moveUpAction: function() {
+          var selected = this.shadowRoot.querySelectorAll('tr.polymer-selected');
+          for (var i = selected.length - 1; i >= 0; i--) {
+            var index = parseInt(selected[i].getAttribute('index')),
+              newIndex = null,
+              tasks = this.model.tasks,
+              i2 = index-1;
+            for (; i2 >= 0; i2--) {
+              if(tasks[i2].parentid == tasks[index].parentid) {
+                newIndex = i2;
+                break;
+              }
+            }
+            if(newIndex !== null) {
+              this.move(index, newIndex);
+            }
+          }
+        },
+        moveDownAction: function() {
+          var selected = this.shadowRoot.querySelectorAll('tr.polymer-selected');
+          for (var i = selected.length - 1; i >= 0; i--) {
+            var index = parseInt(selected[i].getAttribute('index')),
+              newIndex = null,
+              tasks = this.model.tasks,
+              length = tasks.length,
+              i2 = index+1;
+            for (; i2 < length; i2++) {
+              if(tasks[i2].parentid === tasks[index].parentid) {
+                var nextSibling = tasks[i2],
+                  nextSiblingChildren = tasks.filter( function(task) {
+                    return task.parentid == nextSibling.id;
+                  });
+                newIndex = i2+nextSiblingChildren.length;
+                break;
+              }
+            }
+            //console.log("old_index: "+index+" new_index: "+newIndex);
+            if(newIndex !== null) {
+              this.move(index, newIndex);
+              //this.moveChildren(newIndex);
+            }
+          }
+        },
+        moveUpAction2: function() {
+          var selected = this.shadowRoot.querySelectorAll('tr.polymer-selected');
+          for (var i = selected.length - 1; i >= 0; i--) {
+            var siblingsAndSelf = this.shadowRoot.querySelectorAll('tr[parent-id="' + selected[i].task.parentid + '"]'),
+            previousSibling = null;
+            for (var i2 = siblingsAndSelf.length - 1; i2 >= 0; i2--) {
+              //console.log(siblingsAndSelf[i2].id);
+              if( siblingsAndSelf[i2].id === selected[i].id ) {
+                previousSibling = siblingsAndSelf[i2-1];
+                break;
+              }
+            }
+            if(previousSibling) {
+              this.insertBefore(selected[i], previousSibling);
+              this.moveChildren(selected[i]);
+            }
+          };
+          //console.log(selected);
+        },
+        moveDownAction2: function() {
+          var selected = this.shadowRoot.querySelectorAll('tr.polymer-selected');
+          for (var i = selected.length - 1; i >= 0; i--) {
+            var siblingsAndSelf = this.shadowRoot.querySelectorAll('tr[parent-id="' + selected[i].task.parentid + '"]'),
+            nextNextSibling = null,
+            lastSibling = siblingsAndSelf[siblingsAndSelf.length-1];
+            for (var i2 = siblingsAndSelf.length - 1; i2 >= 0; i2--) {
+              if( siblingsAndSelf[i2].id === selected[i].id ) {
+                nextNextSibling = siblingsAndSelf[i2+2];
+                break;
+              }
+            }
+            if(nextNextSibling) {
+              this.insertBefore(selected[i], nextNextSibling);
+            } else {
+              this.insertAfter(selected[i], siblingsAndSelf[siblingsAndSelf.length-1]);
+            }
+            this.moveChildren(selected[i]);
+          };
+          //console.log(selected);
+        },
+        promoteAction: function() {
+          var selected = this.shadowRoot.querySelectorAll('tr.polymer-selected');
+          for (var i = selected.length - 1; i >= 0; i--) {
+            var parent = this.shadowRoot.getElementById(selected[i].task.parentid),
+              siblingsAndSelf = this.shadowRoot.querySelectorAll('tr[parent-id="' + selected[i].task.parentid + '"]');
+            if(parent && siblingsAndSelf.length) {
+              this.insertAfter(selected[i], siblingsAndSelf[siblingsAndSelf.length-1]);
+              selected[i].task.depth = selected[i].task.depth - 1;
+              selected[i].task.parentid = parent.task.parentid;
+              this.moveChildren(selected[i]);
+              this.fire('td-task-changed');
+            }
+          };
+        },
+        demoteAction: function() {
+          var selected = this.shadowRoot.querySelectorAll('tr.polymer-selected');
+          for (var i = selected.length - 1; i >= 0; i--) {        
+            var siblingsAndSelf = this.shadowRoot.querySelectorAll('tr[parent-id="' + selected[i].task.parentid + '"]'),
+              previousSibling = null;
+            
+            for (var i2 = siblingsAndSelf.length - 1; i2 >= 0; i2--) {
+              if( siblingsAndSelf[i2].id === selected[i].id ) {
+                previousSibling = siblingsAndSelf[i2-1];
+                break;
+              }
+            }
+            if(previousSibling) {
+              var children = this.shadowRoot.querySelectorAll('tr[parent-id="' + previousSibling.id + '"]');
+              if(children.length) {
+                var lastChild = children[children.length-1];
+                this.insertAfter(selected[i], lastChild);
+              }
+              selected[i].task.depth = selected[i].task.depth + 1;
+              selected[i].task.parentid = previousSibling.id;
+              this.moveChildren(selected[i]);
+              selected[i].fire('td-task-changed');
+            }
+          };
+        },
+        moveChildren: function(parentIndex) {
+          var tasks = this.model.tasks,
+            parent = tasks[parentIndex],
+            newIndex = parentIndex;
+          
+          if(parent !== undefined) {
+            for (var i = 0; i < tasks.length; i++) {
+              if(tasks[i].parentid == parent.id) {
+                newIndex++;
+                tasks[i].depth = parent.depth + 1;
+                this.move(i, newIndex);
+                this.moveChildren(newIndex);
+              }
+            }
+          }
+        },
+        moveChildren2: function(parentNode) {
+          var children = this.shadowRoot.querySelectorAll('tr[parent-id="' + parentNode.id + '"]');
+          if(children.length) {
+            for (var i = 0; i < children.length; i++) {
+              if(i === 0) {
+                this.insertAfter(children[i], parentNode);
+              } else {
+                this.insertAfter(children[i], children[i-1]);
+              }
+              children[i].task.depth = parentNode.task.depth + 1;
+              this.moveChildren(children[i]);
+            };
+          }
+        },
+        keyupAction: function(e, detail, sender) {
+          if (e.keyCode === ESC_KEY) {
+            //console.log('ESC_KEY');
+            this.fire('fh-project-task-input-cancel');
+          } else if(e.shiftKey && e.keyCode === TAB_KEY) { 
+            //console.log('shift tab');
+            //this.fire('fh-project-task-input-promote');
+          } else if(e.keyCode === TAB_KEY) {
+            //console.log('tab');
+            //this.fire('fh-project-task-input-demote');
+          } else if(e.keyCode === ARROW_UP_KEY) {
+            //console.log('up');
+            this.$.taskSelector.selectPrevious(true);
+          }
+           else if(e.keyCode === ARROW_DOWN_KEY) {
+            //console.log('down');
+            this.$.taskSelector.selectNext(true);
+          }
+        },
+        keypressAction: function(e, detail, sender) {
+          // Listen for enter on keypress but esc on keyup, because
+          // IE doesn't fire keyup for enter.
+          if (e.keyCode === ENTER_KEY) {
+            //console.log('ENTER_KEY');
+            //console.log(e.target.templateInstance.model.task);
+            e.target.templateInstance.model.task.editMode = false;
+            this.fire('fh-project-task-input-commit');
+          }
+        }
+
+      });
+
+    })();
+  </script>
+</polymer-element>
