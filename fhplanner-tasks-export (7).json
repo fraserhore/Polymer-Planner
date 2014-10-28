@@ -1,0 +1,19 @@
+{
+  "-J_8Ny6RBE8FidD3OqYO" : {
+    "actualWork" : 0,
+    "assignedWork" : 0,
+    "assignments" : 0,
+    "code" : "0",
+    "duration" : "1",
+    "endDate" : "2014-10-26",
+    "estimatedWork" : 0,
+    "hasChild" : false,
+    "level" : 0,
+    "name" : "New Task 2000",
+    "parentId" : "",
+    "position" : 2000,
+    "scheduledWork" : 0,
+    "startDate" : "2014-10-26",
+    "uid" : "-J_8Ny6RBE8FidD3OqYO"
+  }
+}

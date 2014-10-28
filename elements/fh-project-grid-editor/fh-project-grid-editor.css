@@ -32,6 +32,9 @@
       border-radius: 0;
       font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; }
 
+.hidden {
+  display: none; }
+
 .core-selected td, .core-selected input {
   background-color: #FFFF99; }
 

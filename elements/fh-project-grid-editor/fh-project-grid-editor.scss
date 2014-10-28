@@ -43,6 +43,10 @@
     }
 }
 
+.hidden {
+ display: none;
+}
+
 .core-selected td, .core-selected input {
     background-color: #FFFF99;   
 }

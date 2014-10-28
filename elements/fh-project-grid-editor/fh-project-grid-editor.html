@@ -1,6 +1,7 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/core-selector/core-selector.html">
 <link rel="import" href="../../bower_components/core-icons/core-icons.html">
+<link rel="import" href="../../bower_components/core-icons/editor-icons.html">
 <link rel="import" href="../../bower_components/firebase-element/firebase-element.html">
 <link rel="import" href="../../bower_components/polymer-filters/polymer-filters.html">
 <link rel="import" href="../fh-project-task-input/fh-project-task-input.html">
@@ -16,11 +17,13 @@
 
     <section>
       <section id="main"> 
-        <button id="move-up-button" on-click="{{moveUpAction}}">Up</button>
-        <button id="move-down-button" on-click="{{moveDownAction}}">Down</button>
-        <button id="move-demote-button" on-click="{{demoteAction}}">Demote</button>
-        <button id="move-promote-button" on-click="{{promoteAction}}">Promote</button>      
-
+        <paper-icon-button icon="editor:vertical-align-bottom" on-click="{{insertTaskBelow}}"></paper-icon-button>
+        <paper-icon-button icon="editor:vertical-align-top" on-click="{{insertTaskAbove}}"></paper-icon-button>
+        <paper-icon-button icon="editor:vertical-align-top" on-click="{{moveUpAction}}"></paper-icon-button>
+        <paper-icon-button icon="editor:vertical-align-top" on-click="{{moveDownAction}}"></paper-icon-button>
+        <paper-icon-button icon="arrow-forward" on-click="{{demoteAction}}"></paper-icon-button>
+        <paper-icon-button icon="arrow-back" on-click="{{promoteAction}}"></paper-icon-button>
+        
         <table id="task-grid-table">
           <thead>
             <tr style="height:40px">
@@ -39,61 +42,65 @@
             </tr>
           </thead>
           <tbody id="taskapp">
-            <template repeat="{{task, index in data.tasks}}">
-              <tr id="{{task.id}}" task="{{task}}" level="{{task.level}}" on-dblclick="{{editAction}}" on-keyup="{{keyupAction}}" on-keypress="{{keypressAction}}">
-                <template if="{{task.editMode}}">
+            <template repeat="{{taskKey, index in taskKeys}}">
+              <tr uid="{{data.tasks[taskKey].uid}}" index="{{index}}" task="{{task}}" level="{{data.tasks[taskKey].level}}" on-dblclick="{{editAction}}" on-keyup="{{keyupAction}}" on-keypress="{{keypressAction}}">
+                <template if="{{taskKey === editingTask}}">
                   <th>
-                    <span>{{index+1}}</span> <core-icon icon="create"></core-icon>
+                    <span>{{index+1}}</span> <paper-icon-button icon="create"></paper-icon-button>
                   </th>
                   <td>
-                    <div class="taskStatus cvcColorSquare" status="{{task.status}}"></div>
+                    <div class="taskStatus cvcColorSquare" status="{{data.tasks[taskKey].status}}"></div>
                   </td>
                   <td>
-                    <input name="code" value="{{task.code}}" on-change="{{changeAction}}" on-blur="">
+                    <input name="code" value="{{data.tasks[taskKey].code}}" on-change="{{changeAction}}" on-blur="">
                   </td>
-                  <td style="padding-left:{{18+(task.level*10)}}px;">
-                    <div class="{{task.hasChild ? 'exp-controller expcoll exp':'exp-controller'}}" align="center"></div>
-                    <input name="name" value="{{task.name}}" placeholder="name" on-change="{{changeAction}}">
-                  </td>
-                  <td>
-                    <input name="start"  value="{{task.startDate}}" max="{{task.endDate}}" type="date" on-change="{{changeAction}}">
-                  </td>
-                  <td>
-                    <input name="end" value="{{task.endDate}}" min="{{task.startDate}}" type="date" on-change="{{changeAction}}">
+                  <td style="padding-left:{{data.tasks[taskKey].level*50}}px;">
+                    <template if="{{data.tasks[taskKey].hasChild}}">
+                      <paper-icon-button icon="add"></paper-icon-button>
+                    </template>
+                    <input name="name" value="{{data.tasks[taskKey].name}}" placeholder="name" on-change="{{changeAction}}">
                   </td>
                   <td>
-                    <input name="duration" value="{{task.duration}}" on-change="{{changeAction}}">
+                    <input name="start"  value="{{data.tasks[taskKey].startDate}}" max="{{data.tasks[taskKey].endDate}}" type="date" on-change="{{changeAction}}">
                   </td>
                   <td>
-                    <input name="depends" value="{{task.depends}}" on-change="{{changeAction}}">
+                    <input name="end" value="{{data.tasks[taskKey].endDate}}" min="{{data.tasks[taskKey].startDate}}" type="date" on-change="{{changeAction}}">
+                  </td>
+                  <td>
+                    <input name="duration" value="{{data.tasks[taskKey].duration}}" on-change="{{changeAction}}">
+                  </td>
+                  <td>
+                    <input name="depends" value="{{data.tasks[taskKey].depends}}" on-change="{{changeAction}}">
                   </td>
                   <td></td>
                   <td>
-                    <input name="work" value="{{task.estimatedWork}}" on-change="{{changeAction}}">
+                    <input name="work" value="{{data.tasks[taskKey].estimatedWork}}" on-change="{{changeAction}}">
                   </td>
-                  <td>{{(task.estimatedWork ? task.estimatedWork/task.duration*100 : 0) | round}}%</td>
-                  <td>{{(task.estimatedWork ? task.estimatedWork/task.duration*100 : 0) | round}}%</td>
+                  <td>{{(data.tasks[taskKey].estimatedWork ? data.tasks[taskKey].estimatedWork/data.tasks[taskKey].duration*100 : 0) | round}}%</td>
+                  <td>{{(data.tasks[taskKey].estimatedWork ? data.tasks[taskKey].estimatedWork/data.tasks[taskKey].duration*100 : 0) | round}}%</td>
                 </template>
-                <template if="{{!task.editMode}}">
+                <template if="{{taskKey !== editingTask}}">
                   <th>
-                    <span>{{index+1}}</span> <core-icon icon="create"></core-icon>
+                    <span>{{index+1}}</span> <paper-icon-button icon="create"></paper-icon-button>
                   </th>
                   <td class="">
-                    <div class="taskStatus cvcColorSquare" status="{{task.status}}"></div>
+                    <div class="taskStatus cvcColorSquare" status="{{data.tasks[taskKey].status}}"></div>
                   </td>
-                  <td>{{task.code}}</td>
-                  <td style="padding-left:{{18+(task.level*10)}}px;">
-                    <span class="{{task.hasChild ? 'exp-controller expcoll exp':'exp-controller'}}" align="center"></span>
-                    {{task.name}}
+                  <td>{{data.tasks[taskKey].code}}</td>
+                  <td style="padding-left:{{data.tasks[taskKey].level*50}}px;">
+                    <template if="{{data.tasks[taskKey].hasChild}}">
+                      <paper-icon-button icon="remove" on-click="{{toggleCollapseAction}}" style="width: 20px; height: 20px;"></paper-icon-button>
+                    </template>
+                    {{data.tasks[taskKey].name}}
                   </td>
-                  <td>{{task.startDate}}</td>
-                  <td>{{task.endDate}}</td>
-                  <td>{{task.duration}}</td>
-                  <td>{{task.depends}}</td>
+                  <td>{{data.tasks[taskKey].startDate}}</td>
+                  <td>{{data.tasks[taskKey].endDate}}</td>
+                  <td>{{data.tasks[taskKey].duration}}</td>
+                  <td>{{data.tasks[taskKey].depends}}</td>
                   <td></td>
-                  <td>{{task.estimatedWork}}</td>
-                  <td>{{(task.estimatedWork ? task.estimatedWork/task.duration*100 : 0) | round}}%</td>
-                  <td>{{(task.estimatedWork ? task.estimatedWork/task.duration*100 : 0) | round}}%</td>
+                  <td>{{data.tasks[taskKey].estimatedWork}}</td>
+                  <td>{{(data.tasks[taskKey].estimatedWork ? data.tasks[taskKey].estimatedWork/data.tasks[taskKey].duration*100 : 0) | round}}%</td>
+                  <td>{{(data.tasks[taskKey].estimatedWork ? data.tasks[taskKey].estimatedWork/data.tasks[taskKey].duration*100 : 0) | round}}%</td>
                 </template>
               </tr>
             </template>
@@ -102,6 +109,7 @@
       </section>
     </section>
   </template>
+  <script src="../../bower_components/moment/moment.js"></script>
   <script>
     (function () {
       'use strict';
@@ -114,6 +122,10 @@
 
       Polymer({
 
+        numberOfTasks: 0,
+        taskKeys: [],
+        editingTask: "",
+        selectedTask: "",
         observe: {
           // dataChanged only called if data is pointed at a new object
           // changes to data's _properties or sub-properites are not observed_
@@ -122,7 +134,10 @@
           'data.tasks[0].name': 'dataNameChanged'
         },
         dataChanged: function() {
-          console.dir(this.data);
+          console.log(moment());
+          this.taskKeys = Object.keys(this.data.tasks);
+          this.numberOfTasks = this.data.tasks.length;
+
         },
         dataNameChanged: function() {
           console.log('dataNameChanged');
@@ -130,297 +145,151 @@
         },
         childChanged: function() {
           console.log('childChanged');
+          this.taskKeys = Object.keys(this.data.tasks);
         },
         changeAction: function() {
           console.log('changeAction');
           this.$.base.commitProperty('tasks');
         },
-        created: function(){
-          //if(!this.data) this.data = [];
-          //if(!this.columns) this.columns = [];
-          this.undoStack = [];
+        toggleCollapseAction: function(event, detail, sender) {
+          var taskId = event.target.templateInstance.model.task.uid,
+              taskRow = sender.parentNode.parentNode,
+              descendents = this.getDescendentRows(taskRow);
+          if(sender.getAttribute('icon') === 'remove') {
+            sender.setAttribute('icon', 'add');
+            for (var i = descendents.length - 1; i >= 0; i--) {
+              descendents[i].classList.add('hidden');
+            };
+          } else {
+            sender.setAttribute('icon', 'remove');
+            for (var i = descendents.length - 1; i >= 0; i--) {
+              descendents[i].classList.remove('hidden');
+            };
+          }
+        },
+        getDescendentRows: function(taskRow) {
+          if(taskRow) {
+            var ret = [],
+                taskRows = this.shadowRoot.querySelectorAll('tbody tr'),
+                pos = parseInt(taskRow.getAttribute('index')),
+                level = taskRow.getAttribute('level');
+            for (var i = pos + 1; i < taskRows.length; i++) {
+              var ch = taskRows[i];
+              if ( ch.getAttribute('level') > level)
+                ret.push(ch);
+              else
+                break;
+            }
+            return ret;
+          }
+        },
+        /*
+        getDescendentTasks: function(taskKey) {
+          if(taskKey) {
+            var ret = [],
+                task = this.data.tasks[taskKey],
+                pos = parseInt(task.priority),
+                level = taskRow.getAttribute('level');
+            for (var i = pos + 1; i < taskRows.length; i++) {
+              var ch = taskRows[i];
+              if ( ch.getAttribute('level') > level)
+                ret.push(ch);
+              else
+                break;
+            }
+            return ret;
+          }
+        },
+        */
+        insertTaskBelow: function() {
+          if(this.selectedTask) {
+            var selected = this.data.tasks[this.selectedTask],
+                selectedPosition = parseInt(selected.position),
+                keys = Object.keys(this.data.tasks),
+                selectedIndex = keys.indexOf(this.selectedTask),
+                nextPosition = selectedIndex !== -1 && keys[selectedIndex + 1] ? parseInt(this.data.tasks[keys[selectedIndex + 1]].position) : selectedPosition+2000,
+                newPosition = selectedPosition+((nextPosition-selectedPosition)/2),
+                tasksRef = this.$.base.ref.child('tasks'),
+                newTaskRef = tasksRef.push();
+            newTaskRef.setWithPriority({
+                  "actualWork" : 0,
+                  "assignedWork" : 0,
+                  "assignments" : 0,
+                  "code" : "0",
+                  "duration" : "1",
+                  "endDate" : moment().format('YYYY-MM-DD'),
+                  "estimatedWork" : 0,
+                  "hasChild" : false,
+                  "level" : parseInt(selected.level),
+                  "name" : "New Task "+newPosition,
+                  "parentId" : "",
+                  "position" : parseInt(newPosition),
+                  "scheduledWork" : 0,
+                  "startDate" : moment().format('YYYY-MM-DD'),
+                  "uid" : 0
+                }, newPosition);
+            newTaskRef.update({
+              "uid":newTaskRef.name()
+            });
+            tasksRef.on('value', function (snapshot) {
+              console.log(snapshot.val());
+            }, function (errorObject) {
+              console.log('The read failed: ' + errorObject.code);
+            });
+          }
+        },
+        
 
-        },
-        ready: function() {
-          //console.log(this.shadowRoot.querySelectorAll('tr'));
-          //console.log(this.$.base.data);
-        },
-        attached: function() {
-          this.async(function() {
-            //console.log(this.shadowRoot.querySelectorAll('tr'));
-            
-          });
-        },
-        modelIdChanged: function() {
-          //this.model = document.querySelector('fh-project').shadowRoot.querySelector('#' + this.modelId);
-        },
-        modelChanged: function() {
-          //console.log('modelChanged');
-        },
-        routeChanged: function() {
-          this.model && (this.model.filter = this.route);
-        },
         selectAction: function(event,detail,sender) {
           //console.log('selectAction');
-          //console.log(event.detail.item + ': ' + event.detail.isSelected);
-          if(event.detail.isSelected) {
+          var taskKey = detail.item.templateInstance.model.taskKey;
+          console.log(this.data.tasks[taskKey]);
+          if(detail.isSelected) {
+            this.selectedTask = taskKey;
             //event.detail.item.querySelector('input[name="name"]').focus();
           } else {
-            event.detail.item.templateInstance.model.task.editMode = false;
+            this.editingTask = '';
           }
         },
         
         editing: false,
         editAction: function(event, detail, sender) {
-          //console.log('editAction');
-          
-          event.target.templateInstance.model.task.editMode = true;
-          //console.log(this.shadowRoot.querySelector('td'));
+          var taskKey = event.target.templateInstance.model.taskKey,
+              task = this.data.tasks[taskKey];
+          this.editingTask = taskKey;
           //this.shadowRoot.querySelector('input[name="name"]').focus();
           // schedule focus for the end of microtask, when the input will be visible
           this.asyncMethod(function() {
             //this.$.edit.focus();
           });
         },
-        commitAction: function() {
-          //console.log('commitAction');
-          if (this.editing) {
-            this.editing = false;
-            for(var key in this.task) {
-              if(typeof this.task[key] == 'string' || this.task[key] instanceof String) {
-                this.task[key] = this.task[key].trim();
-              }
-            }
-            if (this.task.name === '') {
-              this.destroyAction();
-            }
-            this.fire('fh-task-changed');
-          }
-        },
-        addTaskAction: function() {
-          //console.log(this.model);
-          this.model.newtask(
-            this.$['new-task-name'].value,
-            this.$['new-task-start'].value,
-            this.$['new-task-finish'].value, 
-            this.$['new-task-work'].value);
-          // when polyfilling Object.observe, make sure we update immediately
-          Platform.flush();
-          this.$['new-task-name'].value = '';
-          this.$['new-task-work'].value = '';
-        },
-        cancelAddTaskAction: function() {
-          this.$['new-task-name'].value = '';
-          this.$['new-task-work'].value = '';
-        },
-        taskChangedAction: function() {
-          //console.log('taskChangedAction');
-          this.model && this.model.tasksChanged();
-        },
-        destroytaskAction: function(e, detail) {
-          this.model.destroytask(detail);
-        },
-        toggleAllCompletedAction: function(e, detail, sender) {
-          this.model.settasksCompleted(sender.checked);
-        },
-        clearCompletedAction: function() {
-          this.model.cleartasks();
-        },
         insertBefore: function(sourceNode, targetNode) {
-          targetNode.parentNode.insertBefore(sourceNode, targetNode);
+
         },
         insertAfter: function (sourceNode, targetNode) {
-          targetNode.parentNode.insertBefore(sourceNode, targetNode.nextSibling);
         },
         move: function (old_index, new_index) {
-          var tasks = this.model.tasks,
-            task,
-            subtreeLength = 0;
-
-          // correct for passing of negative index numbers
-            while (old_index < 0) {
-                old_index += tasks.length;
-            }
-            while (new_index < 0) {
-                new_index += tasks.length;
-            }
-            if (new_index >= tasks.length) {
-                var k = new_index - tasks.length;
-                while ((k--) + 1) {
-                    tasks.push(undefined);
-                }
-            }
-
-            // determine number of subtree tasks to move with the task
-            task = tasks[old_index];
-            for (var i = old_index+1; i < tasks.length; i++) {
-              if(tasks[i].depth === task.depth) {
-                break
-              } else {
-                subtreeLength++
-              }
-            };
-
-            // if moving down, adjust for the removal of the subtree tasks
-            if(new_index > old_index) {
-              new_index = new_index - subtreeLength;
-            }
-
-            // Move the task and its subtree
-            //tasks.splice(new_index, 0, tasks.splice(old_index, 1)[0]);
-            tasks.splice.apply(tasks, [new_index, 0].concat(tasks.splice(old_index, 1+subtreeLength)));
         },
         moveUpAction: function() {
-          var selected = this.shadowRoot.querySelectorAll('tr.polymer-selected');
-          for (var i = selected.length - 1; i >= 0; i--) {
-            var index = parseInt(selected[i].getAttribute('index')),
-              newIndex = null,
-              tasks = this.model.tasks,
-              i2 = index-1;
-            for (; i2 >= 0; i2--) {
-              if(tasks[i2].parentid == tasks[index].parentid) {
-                newIndex = i2;
-                break;
-              }
-            }
-            if(newIndex !== null) {
-              this.move(index, newIndex);
-            }
-          }
         },
         moveDownAction: function() {
-          var selected = this.shadowRoot.querySelectorAll('tr.polymer-selected');
-          for (var i = selected.length - 1; i >= 0; i--) {
-            var index = parseInt(selected[i].getAttribute('index')),
-              newIndex = null,
-              tasks = this.model.tasks,
-              length = tasks.length,
-              i2 = index+1;
-            for (; i2 < length; i2++) {
-              if(tasks[i2].parentid === tasks[index].parentid) {
-                var nextSibling = tasks[i2],
-                  nextSiblingChildren = tasks.filter( function(task) {
-                    return task.parentid == nextSibling.id;
-                  });
-                newIndex = i2+nextSiblingChildren.length;
-                break;
-              }
-            }
-            //console.log("old_index: "+index+" new_index: "+newIndex);
-            if(newIndex !== null) {
-              this.move(index, newIndex);
-              //this.moveChildren(newIndex);
-            }
-          }
-        },
-        moveUpAction2: function() {
-          var selected = this.shadowRoot.querySelectorAll('tr.polymer-selected');
-          for (var i = selected.length - 1; i >= 0; i--) {
-            var siblingsAndSelf = this.shadowRoot.querySelectorAll('tr[parent-id="' + selected[i].task.parentid + '"]'),
-            previousSibling = null;
-            for (var i2 = siblingsAndSelf.length - 1; i2 >= 0; i2--) {
-              //console.log(siblingsAndSelf[i2].id);
-              if( siblingsAndSelf[i2].id === selected[i].id ) {
-                previousSibling = siblingsAndSelf[i2-1];
-                break;
-              }
-            }
-            if(previousSibling) {
-              this.insertBefore(selected[i], previousSibling);
-              this.moveChildren(selected[i]);
-            }
-          };
-          //console.log(selected);
-        },
-        moveDownAction2: function() {
-          var selected = this.shadowRoot.querySelectorAll('tr.polymer-selected');
-          for (var i = selected.length - 1; i >= 0; i--) {
-            var siblingsAndSelf = this.shadowRoot.querySelectorAll('tr[parent-id="' + selected[i].task.parentid + '"]'),
-            nextNextSibling = null,
-            lastSibling = siblingsAndSelf[siblingsAndSelf.length-1];
-            for (var i2 = siblingsAndSelf.length - 1; i2 >= 0; i2--) {
-              if( siblingsAndSelf[i2].id === selected[i].id ) {
-                nextNextSibling = siblingsAndSelf[i2+2];
-                break;
-              }
-            }
-            if(nextNextSibling) {
-              this.insertBefore(selected[i], nextNextSibling);
-            } else {
-              this.insertAfter(selected[i], siblingsAndSelf[siblingsAndSelf.length-1]);
-            }
-            this.moveChildren(selected[i]);
-          };
-          //console.log(selected);
         },
         promoteAction: function() {
-          var selected = this.shadowRoot.querySelectorAll('tr.polymer-selected');
-          for (var i = selected.length - 1; i >= 0; i--) {
-            var parent = this.shadowRoot.getElementById(selected[i].task.parentid),
-              siblingsAndSelf = this.shadowRoot.querySelectorAll('tr[parent-id="' + selected[i].task.parentid + '"]');
-            if(parent && siblingsAndSelf.length) {
-              this.insertAfter(selected[i], siblingsAndSelf[siblingsAndSelf.length-1]);
-              selected[i].task.depth = selected[i].task.depth - 1;
-              selected[i].task.parentid = parent.task.parentid;
-              this.moveChildren(selected[i]);
-              this.fire('td-task-changed');
-            }
-          };
         },
         demoteAction: function() {
-          var selected = this.shadowRoot.querySelectorAll('tr.polymer-selected');
-          for (var i = selected.length - 1; i >= 0; i--) {        
-            var siblingsAndSelf = this.shadowRoot.querySelectorAll('tr[parent-id="' + selected[i].task.parentid + '"]'),
-              previousSibling = null;
-            
-            for (var i2 = siblingsAndSelf.length - 1; i2 >= 0; i2--) {
-              if( siblingsAndSelf[i2].id === selected[i].id ) {
-                previousSibling = siblingsAndSelf[i2-1];
-                break;
-              }
-            }
-            if(previousSibling) {
-              var children = this.shadowRoot.querySelectorAll('tr[parent-id="' + previousSibling.id + '"]');
-              if(children.length) {
-                var lastChild = children[children.length-1];
-                this.insertAfter(selected[i], lastChild);
-              }
-              selected[i].task.depth = selected[i].task.depth + 1;
-              selected[i].task.parentid = previousSibling.id;
-              this.moveChildren(selected[i]);
-              selected[i].fire('td-task-changed');
-            }
+          console.log(this.shadowRoot.querySelector('tbody tr[uid="'+this.selectedTask+'"]').previousSibling);
+          var selectedRow = this.shadowRoot.querySelector('tbody tr[uid="'+this.selectedTask+'"]'),
+              previousRow = selectedRow.previousElementSibling,
+              previousRowLevel = parseInt(previousRow.getAttribute('level')),
+              descendents = this.getDescendentRows(selectedRow);
+          selectedRow.setAttribute('level', previousRowLevel+1);
+          console.log(selectedRow);
+          for (var i = descendents.length - 1; i >= 0; i--) {
+            var element = descendents[i],
+                level = parseInt(element.level);
+            element.setAttribute('level', level+1);
           };
-        },
-        moveChildren: function(parentIndex) {
-          var tasks = this.model.tasks,
-            parent = tasks[parentIndex],
-            newIndex = parentIndex;
-          
-          if(parent !== undefined) {
-            for (var i = 0; i < tasks.length; i++) {
-              if(tasks[i].parentid == parent.id) {
-                newIndex++;
-                tasks[i].depth = parent.depth + 1;
-                this.move(i, newIndex);
-                this.moveChildren(newIndex);
-              }
-            }
-          }
-        },
-        moveChildren2: function(parentNode) {
-          var children = this.shadowRoot.querySelectorAll('tr[parent-id="' + parentNode.id + '"]');
-          if(children.length) {
-            for (var i = 0; i < children.length; i++) {
-              if(i === 0) {
-                this.insertAfter(children[i], parentNode);
-              } else {
-                this.insertAfter(children[i], children[i-1]);
-              }
-              children[i].task.depth = parentNode.task.depth + 1;
-              this.moveChildren(children[i]);
-            };
-          }
+          this.changeAction();
         },
         keyupAction: function(e, detail, sender) {
           if (e.keyCode === ESC_KEY) {
@@ -447,7 +316,7 @@
           if (e.keyCode === ENTER_KEY) {
             //console.log('ENTER_KEY');
             //console.log(e.target.templateInstance.model.task);
-            e.target.templateInstance.model.task.editMode = false;
+            this.editingTask = '';
             this.fire('fh-project-task-input-commit');
           }
         }

@@ -1,0 +1,88 @@
+{
+  "calendars" : [ {
+    "UID" : 0,
+    "name" : "Default",
+    "nonWorkingDays" : [ {
+      "annual" : true,
+      "endDate" : "2014-01-01",
+      "name" : "New Year",
+      "startDate" : "2014-01-01"
+    } ]
+  } ],
+  "name" : "ISSAT",
+  "orgUnits" : [ {
+    "name" : "Advisory Field Support",
+    "uid" : 0
+  }, {
+    "name" : "Training",
+    "uid" : 0
+  } ],
+  "roles" : "",
+  "settings" : "",
+  "tasks" : [ {
+    "actualWork" : 0,
+    "assignedWork" : 0,
+    "assignments" : 0,
+    "code" : "10",
+    "duration" : "50",
+    "editMode" : false,
+    "endDate" : "2014-10-23",
+    "estimatedWork" : 10,
+    "hasChild" : true,
+    "level" : 0,
+    "name" : "Task one",
+    "parentId" : "",
+    "scheduledWork" : 0,
+    "startDate" : "2014-09-23",
+    "uid" : 1
+  }, {
+    "actualWork" : 0,
+    "assignedWork" : 0,
+    "depends" : "AFS",
+    "duration" : "6",
+    "editMode" : false,
+    "endDate" : "2014-10-24",
+    "estimatedWork" : "20",
+    "level" : 1,
+    "name" : "Task two",
+    "parentId" : 1,
+    "scheduledWork" : 0,
+    "startDate" : "2014-10-24",
+    "uid" : 2
+  }, {
+    "actualWork" : 0,
+    "assignedWork" : 0,
+    "depends" : "KS",
+    "duration" : "90",
+    "editMode" : false,
+    "endDate" : "2014-10-30",
+    "estimatedWork" : 10,
+    "level" : 0,
+    "name" : "Task three",
+    "parentId" : "",
+    "scheduledWork" : 0,
+    "startDate" : "2014-10-25",
+    "uid" : 0
+  } ],
+  "uid" : 1,
+  "users" : [ {
+    "emailAddresses" : [ {
+      "description" : "",
+      "emailAddress" : ""
+    } ],
+    "firstName" : "",
+    "initials" : "",
+    "jobTitle" : "",
+    "lastName" : "",
+    "orgUnit" : "",
+    "phoneNumbers" : [ {
+      "number" : 0,
+      "type" : "mobile"
+    }, {
+      "number" : 0,
+      "type" : "office"
+    } ],
+    "settings" : "",
+    "uid" : ""
+  } ]
+}
