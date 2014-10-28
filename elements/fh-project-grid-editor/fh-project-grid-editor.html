@@ -61,10 +61,10 @@
                     <input name="name" value="{{data.tasks[taskKey].name}}" placeholder="name" on-change="{{changeAction}}">
                   </td>
                   <td>
-                    <input name="start"  value="{{data.tasks[taskKey].startDate}}" max="{{data.tasks[taskKey].endDate}}" type="date" on-change="{{changeAction}}">
+                    <input name="startDate"  value="{{data.tasks[taskKey].startDate}}" max="{{data.tasks[taskKey].endDate}}" type="date" on-change="{{changeAction}}">
                   </td>
                   <td>
-                    <input name="end" value="{{data.tasks[taskKey].endDate}}" min="{{data.tasks[taskKey].startDate}}" type="date" on-change="{{changeAction}}">
+                    <input name="endDate" value="{{data.tasks[taskKey].endDate}}" min="{{data.tasks[taskKey].startDate}}" type="date" on-change="{{changeAction}}">
                   </td>
                   <td>
                     <input name="duration" value="{{data.tasks[taskKey].duration}}" on-change="{{changeAction}}">
@@ -147,9 +147,28 @@
           console.log('childChanged');
           this.taskKeys = Object.keys(this.data.tasks);
         },
-        changeAction: function() {
+        changeAction: function(event, detail, sender) {
           console.log('changeAction');
-          this.$.base.commitProperty('tasks');
+          //this.$.base.commitProperty('tasks');
+          console.log(event);
+          console.log(sender);
+          var taskKey = event.path[2].templateInstance.model.taskKey,
+              taskAttribute = event.path[0].name,
+              taskAttributeValue = event.path[0].value,
+              updateObject = {},
+              fbChildPath = 'tasks/'+taskKey,
+              fbChildRef = this.$.base.ref.child(fbChildPath);
+          updateObject[taskAttribute] = taskAttributeValue;
+          console.log(taskKey);
+          console.log(updateObject);
+          console.log(fbChildRef.name());
+          fbChildRef.update(updateObject);
+          fbChildRef.on('value', function (snapshot) {
+              console.log(snapshot.val());
+            }, function (errorObject) {
+              console.log('The read failed: ' + errorObject.code);
+            });
+
         },
         toggleCollapseAction: function(event, detail, sender) {
           var taskId = event.target.templateInstance.model.task.uid,
