@@ -23,6 +23,7 @@
         <paper-icon-button icon="editor:vertical-align-top" on-click="{{moveDownAction}}"></paper-icon-button>
         <paper-icon-button icon="arrow-forward" on-click="{{demoteAction}}"></paper-icon-button>
         <paper-icon-button icon="arrow-back" on-click="{{promoteAction}}"></paper-icon-button>
+        <paper-icon-button icon="delete" on-click="{{deleteAction}}"></paper-icon-button>
         
         <table id="task-grid-table">
           <thead>
@@ -171,9 +172,10 @@
 
         },
         toggleCollapseAction: function(event, detail, sender) {
-          var taskId = event.target.templateInstance.model.task.uid,
+          var taskId = event.target.templateInstance.model.taskKey,
               taskRow = sender.parentNode.parentNode,
               descendents = this.getDescendentRows(taskRow);
+
           if(sender.getAttribute('icon') === 'remove') {
             sender.setAttribute('icon', 'add');
             for (var i = descendents.length - 1; i >= 0; i--) {
@@ -202,24 +204,29 @@
             return ret;
           }
         },
-        /*
+        
         getDescendentTasks: function(taskKey) {
           if(taskKey) {
-            var ret = [],
-                task = this.data.tasks[taskKey],
-                pos = parseInt(task.priority),
-                level = taskRow.getAttribute('level');
-            for (var i = pos + 1; i < taskRows.length; i++) {
-              var ch = taskRows[i];
-              if ( ch.getAttribute('level') > level)
-                ret.push(ch);
+            var descendents = [],
+                tasks = this.data.tasks,
+                keys = Object.keys(tasks),
+                numberOfTasks = keys.length,
+                task = tasks[taskKey],
+                index = keys.indexOf(taskKey),
+                level = task.level;
+                
+            for (var i = index + 1; i < numberOfTasks; i++) {
+              var key = keys[i],
+                  followingTask = tasks[key];
+              if(followingTask.level > level)
+                descendents.push(followingTask);
               else
                 break;
             }
-            return ret;
+            return descendents;
           }
         },
-        */
+        
         insertTaskBelow: function() {
           if(this.selectedTask) {
             var selected = this.data.tasks[this.selectedTask],
@@ -257,12 +264,17 @@
             });
           }
         },
-        
+        deleteAction: function() {
+          if(this.selectedTask) {
+            var fbChildPath = 'tasks/'+this.selectedTask,
+                fbChildRef = this.$.base.ref.child(fbChildPath);
+            fbChildRef.remove();
+          }
+        },
 
         selectAction: function(event,detail,sender) {
           //console.log('selectAction');
           var taskKey = detail.item.templateInstance.model.taskKey;
-          console.log(this.data.tasks[taskKey]);
           if(detail.isSelected) {
             this.selectedTask = taskKey;
             //event.detail.item.querySelector('input[name="name"]').focus();
@@ -294,21 +306,29 @@
         moveDownAction: function() {
         },
         promoteAction: function() {
+
         },
         demoteAction: function() {
-          console.log(this.shadowRoot.querySelector('tbody tr[uid="'+this.selectedTask+'"]').previousSibling);
-          var selectedRow = this.shadowRoot.querySelector('tbody tr[uid="'+this.selectedTask+'"]'),
-              previousRow = selectedRow.previousElementSibling,
-              previousRowLevel = parseInt(previousRow.getAttribute('level')),
-              descendents = this.getDescendentRows(selectedRow);
-          selectedRow.setAttribute('level', previousRowLevel+1);
-          console.log(selectedRow);
-          for (var i = descendents.length - 1; i >= 0; i--) {
-            var element = descendents[i],
-                level = parseInt(element.level);
-            element.setAttribute('level', level+1);
-          };
-          this.changeAction();
+          var tasks = this.data.tasks,
+              keys = Object.keys(tasks),
+              index = keys.indexOf(this.selectedTask);
+          if(index !== 0) {
+            var selectedTask = tasks[this.selectedTask],
+                previousTask = tasks[keys[index-1]];
+            if(selectedTask.level === previousTask.level) {
+              var descendents = this.getDescendentTasks(this.selectedTask),
+                  descendentKeys = Object.keys(descendents);
+              selectedTask.level = selectedTask.level+1;
+              previousTask.hasChild = true;
+              console.log(selectedTask);
+              for (var i = descendentKeys.length - 1; i >= 0; i--) {
+                var descendentKey = descendentKeys[i],
+                    descendent = descendents[descendentKey];
+                descendent.level = descendent.level+1;
+              };
+              //TODO: 1) HANDLE CASE IF PREVIOUS LEVEL IS NOT EQUAL 2) UPDATE FIREBASE this.changeAction();
+            }
+          } 
         },
         keyupAction: function(e, detail, sender) {
           if (e.keyCode === ESC_KEY) {
