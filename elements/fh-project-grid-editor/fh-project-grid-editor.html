@@ -226,7 +226,10 @@
             return descendents;
           }
         },
-        
+        move: function(moveKeysArray, referenceKey, relativePosition) {
+          var tasks = this.data.tasks;
+
+        },
         insertTaskBelow: function() {
           if(this.selectedTask) {
             var selected = this.data.tasks[this.selectedTask],
@@ -306,7 +309,10 @@
         moveDownAction: function() {
         },
         promoteAction: function() {
-
+          var selectedTask = tasks[this.selectedTask];
+          if(selectedTask.level !== 0) {
+            // find the next task at current level minus one and insert above and reduce level by one and reduce the level of each descendent by one
+          }
         },
         demoteAction: function() {
           var tasks = this.data.tasks,
