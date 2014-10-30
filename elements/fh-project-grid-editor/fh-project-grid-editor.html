@@ -44,7 +44,7 @@
           </thead>
           <tbody id="taskapp">
             <template repeat="{{taskKey, index in taskKeys}}">
-              <tr uid="{{data.tasks[taskKey].uid}}" index="{{index}}" task="{{task}}" level="{{data.tasks[taskKey].level}}" on-dblclick="{{editAction}}" on-keyup="{{keyupAction}}" on-keypress="{{keypressAction}}">
+              <tr uid="{{data.tasks[taskKey].uid}}" index="{{index}}" task="{{task}}" level="{{data.tasks[taskKey].level}}" on-dblclick="{{editAction}}" on-tap="{{editAction}}" on-keyup="{{keyupAction}}" on-keypress="{{keypressAction}}" touch-action="none">
                 <template if="{{taskKey === editingTask}}">
                   <th>
                     <span>{{index+1}}</span> <paper-icon-button icon="create"></paper-icon-button>
@@ -314,7 +314,7 @@
           if(!this.selectedTask) return;
           var selectedTask = tasks[this.selectedTask];
           if(selectedTask.level !== 0) {
-            
+
           }
         },
         demoteAction: function() {
