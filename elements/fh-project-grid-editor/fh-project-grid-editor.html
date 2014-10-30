@@ -302,37 +302,52 @@
         },
         insertAfter: function (sourceNode, targetNode) {
         },
+        /*
         move: function (old_index, new_index) {
         },
+        */
         moveUpAction: function() {
         },
         moveDownAction: function() {
         },
         promoteAction: function() {
+          if(!this.selectedTask) return;
           var selectedTask = tasks[this.selectedTask];
           if(selectedTask.level !== 0) {
-            // find the next task at current level minus one and insert above and reduce level by one and reduce the level of each descendent by one
+            
           }
         },
         demoteAction: function() {
+          if(!this.selectedTask) return;
           var tasks = this.data.tasks,
               keys = Object.keys(tasks),
-              index = keys.indexOf(this.selectedTask);
+              index = keys.indexOf(this.selectedTask),
+              tasksRef = this.$.base.ref.child('tasks');
           if(index !== 0) {
             var selectedTask = tasks[this.selectedTask],
                 previousTask = tasks[keys[index-1]];
-            if(selectedTask.level === previousTask.level) {
+            if(previousTask.level >= selectedTask.level) {
               var descendents = this.getDescendentTasks(this.selectedTask),
                   descendentKeys = Object.keys(descendents);
-              selectedTask.level = selectedTask.level+1;
-              previousTask.hasChild = true;
+              if(previousTask.level === selectedTask.level) {
+                //previousTask.hasChild = true;
+                tasksRef.child(previousTask.uid).update({
+                  hasChild: 'true'
+                });
+              }
+              tasksRef.child(selectedTask.uid).update({
+                  level: selectedTask.level+1
+                });
+              //selectedTask.level = selectedTask.level+1;
               console.log(selectedTask);
               for (var i = descendentKeys.length - 1; i >= 0; i--) {
                 var descendentKey = descendentKeys[i],
                     descendent = descendents[descendentKey];
                 descendent.level = descendent.level+1;
+                tasksRef.child(descendent.uid).update({
+                  level: descendent.level+1
+                });
               };
-              //TODO: 1) HANDLE CASE IF PREVIOUS LEVEL IS NOT EQUAL 2) UPDATE FIREBASE this.changeAction();
             }
           } 
         },
