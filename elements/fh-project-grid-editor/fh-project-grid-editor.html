@@ -15,7 +15,7 @@
     <firebase-element id="base" location="https://fhplanner.firebaseio.com/projects/issat" data="{{data}}" keys="{{keys}}" childEvents on-child-changed="{{childChanged}}"></firebase-element>
     <core-selector id="taskSelector" target="{{$.taskapp}}" tasksSelector="tr" on-core-select="{{selectAction}}"></core-selector>
 
-    <section>
+    <section style="overflow-x:scroll;overflow-y:hidden;">
       <section id="main"> 
         <paper-icon-button icon="editor:vertical-align-bottom" on-click="{{insertTaskBelow}}"></paper-icon-button>
         <paper-icon-button icon="editor:vertical-align-top" on-click="{{insertTaskAbove}}"></paper-icon-button>
@@ -44,7 +44,7 @@
           </thead>
           <tbody id="taskapp">
             <template repeat="{{taskKey, index in taskKeys}}">
-              <tr uid="{{data.tasks[taskKey].uid}}" index="{{index}}" task="{{task}}" level="{{data.tasks[taskKey].level}}" on-dblclick="{{editAction}}" on-tap="{{editAction}}" on-keyup="{{keyupAction}}" on-keypress="{{keypressAction}}" touch-action="none">
+              <tr uid="{{data.tasks[taskKey].uid}}" index="{{index}}" task="{{task}}" level="{{data.tasks[taskKey].level}}" on-dblclick="{{editAction}}" on-tap="{{editAction}}" on-keyup="{{keyupAction}}" on-keypress="{{keypressAction}}" touch-action="pan-x pan-y">
                 <template if="{{taskKey === editingTask}}">
                   <th>
                     <span>{{index+1}}</span> <paper-icon-button icon="create"></paper-icon-button>
