@@ -17,15 +17,16 @@
 
     <section style="overflow-x:scroll;overflow-y:hidden;">
       <section id="main"> 
-        <paper-icon-button icon="editor:vertical-align-bottom" on-click="{{insertTaskBelow}}"></paper-icon-button>
-        <paper-icon-button icon="editor:vertical-align-top" on-click="{{insertTaskAbove}}"></paper-icon-button>
-        <paper-icon-button icon="editor:vertical-align-top" on-click="{{moveUpAction}}"></paper-icon-button>
-        <paper-icon-button icon="editor:vertical-align-top" on-click="{{moveDownAction}}"></paper-icon-button>
-        <paper-icon-button icon="arrow-forward" on-click="{{demoteAction}}"></paper-icon-button>
-        <paper-icon-button icon="arrow-back" on-click="{{promoteAction}}"></paper-icon-button>
-        <paper-icon-button icon="delete" on-click="{{deleteAction}}"></paper-icon-button>
-        
-        <table id="task-grid-table">
+        <div style="position:fixed; background-color:white; width:100%;">
+          <paper-icon-button icon="editor:vertical-align-bottom" on-click="{{insertTaskBelow}}"></paper-icon-button>
+          <paper-icon-button icon="editor:vertical-align-top" on-click="{{insertTaskAbove}}"></paper-icon-button>
+          <paper-icon-button icon="editor:vertical-align-top" on-click="{{moveUpAction}}"></paper-icon-button>
+          <paper-icon-button icon="editor:vertical-align-top" on-click="{{moveDownAction}}"></paper-icon-button>
+          <paper-icon-button icon="arrow-forward" on-click="{{demoteAction}}"></paper-icon-button>
+          <paper-icon-button icon="arrow-back" on-click="{{promoteAction}}"></paper-icon-button>
+          <paper-icon-button icon="delete" on-click="{{deleteAction}}"></paper-icon-button>
+        </div>
+        <table id="task-grid-table" style="padding-top:40px;">
           <thead>
             <tr style="height:40px">
               <th style="width:35px;"></th>
@@ -44,7 +45,7 @@
           </thead>
           <tbody id="taskapp">
             <template repeat="{{taskKey, index in taskKeys}}">
-              <tr uid="{{data.tasks[taskKey].uid}}" index="{{index}}" task="{{task}}" level="{{data.tasks[taskKey].level}}" on-dblclick="{{editAction}}" on-tap="{{editAction}}" on-keyup="{{keyupAction}}" on-keypress="{{keypressAction}}" touch-action="pan-x pan-y">
+              <tr uid="{{data.tasks[taskKey].uid}}" index="{{index}}" task="{{task}}" level="{{data.tasks[taskKey].level}}" on-dblclick="{{editAction}}" on-tap="{{}}" on-keyup="{{keyupAction}}" on-keypress="{{keypressAction}}" touch-action="pan-x pan-y">
                 <template if="{{taskKey === editingTask}}">
                   <th>
                     <span>{{index+1}}</span> <paper-icon-button icon="create"></paper-icon-button>
@@ -55,7 +56,7 @@
                   <td>
                     <input name="code" value="{{data.tasks[taskKey].code}}" on-change="{{changeAction}}" on-blur="">
                   </td>
-                  <td style="padding-left:{{data.tasks[taskKey].level*50}}px;">
+                  <td style="padding-left:{{data.tasks[taskKey].level*30}}px;">
                     <template if="{{data.tasks[taskKey].hasChild}}">
                       <paper-icon-button icon="add"></paper-icon-button>
                     </template>
@@ -88,9 +89,9 @@
                     <div class="taskStatus cvcColorSquare" status="{{data.tasks[taskKey].status}}"></div>
                   </td>
                   <td>{{data.tasks[taskKey].code}}</td>
-                  <td style="padding-left:{{data.tasks[taskKey].level*50}}px;">
+                  <td style="padding-left:{{(data.tasks[taskKey].level*36)+36}}px;">
                     <template if="{{data.tasks[taskKey].hasChild}}">
-                      <paper-icon-button icon="remove" on-click="{{toggleCollapseAction}}" style="width: 20px; height: 20px;"></paper-icon-button>
+                      <paper-icon-button icon="remove" on-click="{{toggleCollapseAction}}" style="width: 20px; height: 20px; margin-left:-36px;"></paper-icon-button>
                     </template>
                     {{data.tasks[taskKey].name}}
                   </td>
@@ -135,7 +136,6 @@
           'data.tasks[0].name': 'dataNameChanged'
         },
         dataChanged: function() {
-          console.log(moment());
           this.taskKeys = Object.keys(this.data.tasks);
           this.numberOfTasks = this.data.tasks.length;
 
@@ -151,8 +151,6 @@
         changeAction: function(event, detail, sender) {
           console.log('changeAction');
           //this.$.base.commitProperty('tasks');
-          console.log(event);
-          console.log(sender);
           var taskKey = event.path[2].templateInstance.model.taskKey,
               taskAttribute = event.path[0].name,
               taskAttributeValue = event.path[0].value,
@@ -160,9 +158,6 @@
               fbChildPath = 'tasks/'+taskKey,
               fbChildRef = this.$.base.ref.child(fbChildPath);
           updateObject[taskAttribute] = taskAttributeValue;
-          console.log(taskKey);
-          console.log(updateObject);
-          console.log(fbChildRef.name());
           fbChildRef.update(updateObject);
           fbChildRef.on('value', function (snapshot) {
               console.log(snapshot.val());
@@ -228,7 +223,7 @@
         },
         move: function(moveKeysArray, referenceKey, relativePosition) {
           var tasks = this.data.tasks;
-
+          console.log(moveKeysArray);
         },
         insertTaskBelow: function() {
           if(this.selectedTask) {
@@ -311,10 +306,54 @@
         moveDownAction: function() {
         },
         promoteAction: function() {
+          // no selected task
           if(!this.selectedTask) return;
-          var selectedTask = tasks[this.selectedTask];
-          if(selectedTask.level !== 0) {
-
+          var tasks = this.data.tasks,
+              selectedTask = tasks[this.selectedTask];
+          // Selected task is already at the root level
+          if(selectedTask.level <= 0) return;
+          var keys = Object.keys(tasks),
+              index = keys.indexOf(this.selectedTask);
+          // Selected task is the first task
+          if(index === 0) return;
+          var descendents = this.getDescendentTasks(this.selectedTask),
+              descendentKeys = Object.keys(descendents),
+              tasksRef = this.$.base.ref.child('tasks');
+          // update the selected task's level
+          tasksRef.child(this.selectedTask).update({
+              level: selectedTask.level-1
+            });
+          // update descendent levels
+          for (var i = descendentKeys.length - 1; i >= 0; i--) {
+            var descendentKey = descendentKeys[i],
+                descendent = descendents[descendentKey];
+            tasksRef.child(descendent.uid).update({
+              level: descendent.level-1
+            });
+          };
+          // find the last sibling and if it exists, move selected task and its descendents after it
+          for (var i = index+1; i < keys.length; i++) {
+            var followingTask = tasks[keys[i]],
+                followingSibling = followingTask.level === selectedTask.level ? followingTask : false;
+            if(followingTask.level < selectedTask.level) {
+              break;
+            }
+          };
+          if(followingSibling) {
+            var moveKeysArray = [],
+                referenceKey = followingSibling.uid;
+            moveKeysArray.push(this.selectedTask).push(descendentKeys);
+            this.move(moveKeysArray, referenceKey, 'below');
+          } else {
+            // if no following or preceeding siblings, set parent hasChild value to false
+            for (var i = index - 1; i >= 0; i--) {
+              var previousTask = tasks[keys[i]];
+              if(parseInt(previousTask.level) === parseInt(selectedTask.level)-1 && i===index-1) {
+                tasksRef.child(previousTask.uid).update({
+                  hasChild: false
+                });
+              }
+            };
           }
         },
         demoteAction: function() {
@@ -330,16 +369,13 @@
               var descendents = this.getDescendentTasks(this.selectedTask),
                   descendentKeys = Object.keys(descendents);
               if(previousTask.level === selectedTask.level) {
-                //previousTask.hasChild = true;
                 tasksRef.child(previousTask.uid).update({
-                  hasChild: 'true'
+                  hasChild: true
                 });
               }
               tasksRef.child(selectedTask.uid).update({
                   level: selectedTask.level+1
                 });
-              //selectedTask.level = selectedTask.level+1;
-              console.log(selectedTask);
               for (var i = descendentKeys.length - 1; i >= 0; i--) {
                 var descendentKey = descendentKeys[i],
                     descendent = descendents[descendentKey];
