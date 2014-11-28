@@ -1,0 +1,465 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/core-icons/core-icons.html">
+<link rel="import" href="../../bower_components/core-icons/social-icons.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
+
+<script src="https://cdn.firebase.com/js/client/1.1.2/firebase.js"></script>
+
+<polymer-element name="fh-firebase-login" attributes="location provider user autoLogin statusKnown params">
+    <template>
+        <link rel="stylesheet" href="fh-firebase-login.css">
+
+        <div id="login-container" class="container">
+            <!-- LOGIN -->
+            <form id="frmLogin" role="form" hidden?="{{activeForm!=='login'}}">
+                <h2>Login</h2>
+
+                <div class="form-group">
+                    <label for="txtEmail">Email address</label>
+                    <input type="email" class="form-control" id="txtEmail" placeholder="Enter email" name="email" />
+                </div>
+                <div class="form-group">
+                    <label for="txtPass">Password</label>
+                    <input type="password" class="form-control" id="txtPass" placeholder="Password" name="password" />
+                </div>
+                <button type="submit" class="btn btn-default btn-block">Login</button>
+                <br />
+                <br />
+                <h4>Login with</h4>
+                <paper-button on-tap="{{loginSocial}}" data-provider="google">
+                    <core-icon icon="social:post-gplus"></core-icon>
+                </paper-button>
+                <paper-button on-tap="{{loginSocial}}" data-provider="facebook">
+                    <core-icon icon="social:post-facebook"></core-icon>
+                </paper-button>
+                <paper-button on-tap="{{loginSocial}}" data-provider="linkedin">
+                    <core-icon icon="social:post-linkedin"></core-icon>
+                </paper-button>
+            </form>
+            <!-- / LOGIN -->
+            <!-- LOGOUT -->
+            <form id="frmLogout" role="form" hidden?="{{activeForm!=='logout'}}">
+                <h2>You are logged out!</h2>
+
+            </form>
+            <!-- / LOGOUT -->
+            <!-- REGISTER -->
+            <form id="frmRegister" role="form" hidden?="{{activeForm!=='register'}}">
+                <h2>Register</h2>
+
+                <div class="form-group">
+                    <label for="txtRegEmail">Email address</label>
+                    <input type="email" class="form-control" id="txtEmail" placeholder="Enter email" name="email" />
+                </div>
+                <div class="form-group">
+                    <label for="txtRegPass">Password</label>
+                    <input type="password" class="form-control" id="txtPass" placeholder="Password" name="password" />
+                </div>
+                <button type="submit" class="btn btn-default">Register</button>
+            </form>
+            <!-- / REGISTER -->
+            <!-- PROFILE -->
+            <form id="frmProfile" role="form" hidden?="{{activeForm!=='profile'}}">
+                <h2>Profile</h2>
+
+                <br />
+                <div class="form-group">
+                    <label for="txtName">Name</label>
+                    <input type="text" class="form-control" id="txtName" placeholder="Name" name="name" />
+                </div>
+                <div class="form-group">
+                    <label for="ddlDino">Favorite Dinosaur</label>
+                    <select id="ddlDino" name="favoriteDinosaur" class="form-control">
+                        <option>None</option>
+                        <option>Pteranodon</option>
+                        <option>Lambeosaurus</option>
+                        <option>Stegosaurus</option>
+                        <option>Daspletosaurus</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </form>
+            <!-- / PROFILE -->
+            <hr />
+            <!-- ALERT BOX -->
+            <paper-toast id="toast" text=""></paper-toast>
+            <!-- <div id="alert" class="alert" role="alert">
+                <h4 id="alert-title">You are not logged in</h4>
+                <p id="alert-detail"></p>
+            </div> -->
+            <!-- / ALERT BOX -->
+        </div>
+    </template>
+    <script>
+    (function() {
+        'use strict';
+
+        Polymer('fh-firebase-login', {
+
+        	/**
+		     * Firebase location URL (must have simple login enabled via Forge interface).
+		     * @attribute location
+		     * @type String
+		     * @default null
+		     */
+		    location: null,
+
+		    /**
+		     * Default login provider type.  May be one of: `anonymous`, `custom`, `password`
+		     * `facebook`, `github`, `twitter`, `google`.
+		     * @attribute provider
+		     * @type String
+		     * @default 'anonymous'
+		     */
+		    provider: 'anonymous',
+
+		    /**
+		     * When logged in, this property reflects the firebase user auth object.
+		     * @attribute user
+		     * @type Object
+		     * @default null
+		     */
+		    user: null,
+
+		    /**
+		     * When true, login will be attempted if login status check determines no user is
+		     * logged in.  Should generally only be used with provider types that do not present
+		     * a login UI, such as 'anonymous'.
+		     * @attribute autoLogin
+		     * @type Boolean
+		     * @default false
+		     */
+		    autoLogin: false,
+
+		    /**
+		     * When true, login status can be determined by checking `user` property.
+		     * @attribute statusKnown
+		     * @type Boolean
+		     * @default false
+		     */
+		    statusKnown: false,
+
+		    /**
+		     * Provider-specific parameters to pass to login.  May be overridden at `login()`-time.
+		     * @attribute params
+		     * @type Object
+		     * @default null
+		     */
+		    params: null,
+
+		    /**
+		     * Provider-specific options to pass to login, for provider types that take a second
+		     * object to pass firebase-specific options.  May be overridden at `login()`-time.
+		     * @attribute options
+		     * @type Object
+		     * @default null
+		     */
+		    options: null,
+
+		    /**
+		     * For OAuth provider types (`facebook`, `twitter`, `github`, `google`), determines
+		     * whether the login UI is presented via redirect, as opposed to popup (default).
+		     * @attribute redirect
+		     * @type Boolean
+		     * @default false
+		     */
+		    redirect: false,
+
+		    attached: function() {
+		      window.addEventListener('online', this._boundOnlineHandler);
+		      if (this.ref) {
+		        this.locationChanged();
+		      }
+		    },
+
+		    detached: function() {
+		      window.removeEventListener(this._boundOnlineHandler);
+		      this.ref.offAuth(this._boundAuthHandler);
+		    },
+
+		    locationChanged: function() {
+		      if (this.location != this._location) {
+		        if (this._location) {
+		          this.ref.offAuth(this._boundAuthHandler);
+		        }
+		      }
+		      this._location = this.location;
+		      if (this._location) {
+		        this.ref = new Firebase(this.location);
+		        this.ref.onAuth(this._boundAuthHandler);
+		      } else {
+		        this.ref = null;
+		      }
+		    },
+
+
+            rootRef: {},
+            currentUser: {},
+            activeForm: 'login',
+
+            ready: function() {
+                var self = this;
+
+                this.rootRef = new Firebase('https://fhplanner.firebaseio.com');
+                console.log(this.activeForm);
+                //currentUser: rootRef.getAuth(),
+                // whenever authentication happens send a popup
+                this.rootRef.onAuth(function globalOnAuth(authData) {
+
+                    if (authData) {
+                    	self.activeForm = null;
+                    	self.user = authData;
+                        self.showAlert({
+                            title: 'Logged in!',
+                            detail: 'Using ' + authData.provider,
+                            className: 'alert-success'
+                        });
+                    } else {
+                        self.showAlert({
+                            title: 'You are not logged in',
+                            detail: '',
+                            className: 'alert-info'
+                        });
+                    }
+
+                });
+            },
+
+            // Handle third party login providers
+            // returns a promise
+            thirdPartyLogin: function(provider) {
+                var self = this;
+                return new Promise(function(resolve, reject) {
+                    self.rootRef.authWithOAuthPopup(provider, function(err, user) {
+                        if (err) {
+                            reject(err);
+                        }
+                        if (user) {
+                            resolve(user);
+                        }
+                    });
+                });
+            },
+
+            // Handle Email/Password login
+            // returns a promise
+            authWithPassword: function(userObj) {
+                var deferred = $.Deferred();
+                console.log(userObj);
+                rootRef.authWithPassword(userObj, function onAuth(err, user) {
+                    if (err) {
+                        deferred.reject(err);
+                    }
+
+                    if (user) {
+                        deferred.resolve(user);
+                    }
+
+                });
+
+                return deferred.promise();
+            },
+
+            // create a user but not login
+            // returns a promsie
+            createUser: function(userObj) {
+                var deferred = $.Deferred();
+                rootRef.createUser(userObj, function(err) {
+
+                    if (!err) {
+                        deferred.resolve();
+                    } else {
+                        deferred.reject(err);
+                    }
+
+                });
+
+                return deferred.promise();
+            },
+
+            // Create a user and then login in
+            // returns a promise
+            createUserAndLogin: function(userObj) {
+                return createUser(userObj)
+                    .then(function() {
+                        return authWithPassword(userObj);
+                    });
+            },
+
+            // authenticate anonymously
+            // returns a promise
+            authAnonymously: function() {
+                var deferred = $.Deferred();
+                rootRef.authAnonymously(function(err, authData) {
+
+                    if (authData) {
+                        deferred.resolve(authData);
+                    }
+
+                    if (err) {
+                        deferred.reject(err);
+                    }
+
+                });
+
+                return deferred.promise();
+            },
+
+            // route to the specified route if sucessful
+            // if there is an error, show the alert
+            handleAuthResponse: function(promise, route) {
+                var self = this;
+                promise.then(function(authData) {
+                    var userRef = self.rootRef.child('users').child(authData.uid);
+                    userRef.once('value', function(snap) {
+                        var user = snap.val();
+                        if (!user) {
+                        	self.rootRef.child('users').child(authData.uid).set(authData);
+                        }
+                    });
+                    
+                    self.activeForm = route;
+
+                    if(route === 'profile') {
+                    	console.log(self.$.frmProfile);
+                    	self.profile(self.$.frmProfile);
+                    }
+
+                }, function(err) {
+                    console.log(err);
+                    // pop up error
+                    self.showAlert({
+                        title: err.code,
+                        detail: err.message,
+                        className: 'alert-danger'
+                    });
+
+                });
+            },
+
+            // options for showing the alert box
+            showAlert: function(opts) {
+                this.$.toast.setAttribute('text', opts.title+' '+opts.detail);
+                this.$.toast.show();
+            },
+
+            loginSocial: function(event, detail, sender) {
+                var provider = sender.getAttribute('data-provider'),
+                    socialLoginPromise;
+                socialLoginPromise = this.thirdPartyLogin(provider);
+                this.handleAuthResponse(socialLoginPromise, 'profile');
+            },
+
+            loginUsernamePassword: function(event,detail,sender) {
+
+            },
+
+            login: function(form) {
+
+                // Form submission for logging in
+                form.on('submit', function(e) {
+
+                    var userAndPass = $(this).serializeObject();
+                    var loginPromise = authWithPassword(userAndPass);
+                    e.preventDefault();
+
+                    handleAuthResponse(loginPromise, 'profile');
+
+                });
+
+                // Social buttons
+                form.children('.bt-social').on('click', function(e) {
+
+                    var $currentButton = $(this);
+                    var provider = $currentButton.data('provider');
+                    var socialLoginPromise;
+                    e.preventDefault();
+
+                    socialLoginPromise = thirdPartyLogin(provider);
+                    handleAuthResponse(socialLoginPromise, 'profile');
+
+                });
+
+                form.children('#btAnon').on('click', function(e) {
+                    e.preventDefault();
+                    handleAuthResponse(authAnonymously(), 'profilex');
+                });
+
+            },
+
+            // logout immediately when the controller is invoked
+            logout: function() {
+                this.rootRef.unauth();
+            },
+
+            register: function(form) {
+
+                // Form submission for registering
+                form.on('submit', function(e) {
+
+                    var userAndPass = $(this).serializeObject();
+                    var loginPromise = createUserAndLogin(userAndPass);
+                    e.preventDefault();
+
+                    handleAuthResponse(loginPromise, 'profile');
+
+                });
+
+            },
+
+            profile: function(form) {
+                // Check the current user
+                var self = this,
+                	user = this.rootRef.getAuth(),
+                	userRef;
+
+                console.log(user);
+                // If no current user send to register page
+                if (!user) {
+                    this.currentForm = 'register';
+                    return;
+                }
+
+                // Load user info
+                userRef = this.rootRef.child('users').child(user.uid);
+                userRef.once('value', function(snap) {
+                    var user = snap.val();
+                    if (!user) {
+                        return;
+                    }
+
+                    // set the fields
+                    form.querySelector('#txtName').setAttribute('value', user.name);
+                    form.querySelector('#ddlDino').setAttribute('value', user.favoriteDinosaur);
+                });
+
+                // Save user's info to Firebase
+                form.onsubmit = function(e) {
+                    e.preventDefault();
+                    var f = e.target,
+        				userInfo = {};
+        			userInfo['name'] = form.querySelector('#txtName').value;
+        			userInfo['favoriteDinosaur'] = form.querySelector('#ddlDino').value;
+        			console.log(userInfo.name);
+                    userRef.update(userInfo, function onComplete() {
+
+                        // show the message if write is successful
+                        self.showAlert({
+                            title: 'Successfully saved!',
+                            detail: 'You are still logged in',
+                            className: 'alert-success'
+                        });
+
+                    });
+                }
+
+            }
+
+
+
+        });
+
+    })();
+    </script>
+</polymer-element>

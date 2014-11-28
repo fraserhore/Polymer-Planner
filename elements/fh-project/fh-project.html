@@ -10,86 +10,29 @@
 <link rel="import" href="../../bower_components/font-roboto/roboto.html">
 <link rel="import" href="../fh-project-grid-editor/fh-project-grid-editor.html">
 
-<polymer-element name="fh-project" attributes="">
-  <template>
-    <link rel="stylesheet" href="fh-project.css">
-    <core-header-panel flex waterfall-tall>
-      <core-toolbar class="medium-tall">
-        <paper-icon-button id="navicon" icon="menu"></paper-icon-button>
-        <span flex>FH Planner</span>
-        <paper-icon-button id="morebutton" icon="more-vert"></paper-icon-button>
-        <paper-tabs id="tabs" class="bottom fit" selected="0">
-          <paper-tab>Planner</paper-tab>
-          <paper-tab>Resources</paper-tab>
-        <paper-tabs>
-      </core-toolbar>
-    </core-header-panel>
+<polymer-element name="fh-project" attributes="teamId projectId">
+    <template>
+        <link rel="stylesheet" href="fh-project.css">
+        <section horizontal layout>
+            <div id="left-panel">
+                <fh-project-grid-editor id="task-grid" data="{{data}}" teamId="{{teamId}}" projectId="{{projectId}}"></fh-project-grid-editor>
+            </div>
+            <core-splitter direction="left"></core-splitter>
+            <div id="right-panel" flex>
+                <fh-project-gantt id="task-gantt" modelId="fh-project-model"></fh-project-gantt>
+            </div>
+        </section>
+    </template>
+    <script>
+    (function() {
+        'use strict';
 
-    <core-pages id="pages" flex>
-      <div horizontal layout>
-        <div id="left-panel">
-<!--             <fh-project-grid-editor id="task-grid" data="{{data}}" modelId="fh-project-model"/>-->
-        </div>
-
-        <core-splitter direction="left"></core-splitter>
-        
-        <div id="right-panel" flex>
-          <!--
-          <paper-tabs selected="0">
-            <paper-tab>Gantt</paper-tab>
-            <paper-tab>Schedule</paper-tab>
-            <paper-tab>Workload</paper-tab>
-          </paper-tabs>
-          -->
-          <fh-project-gantt id="task-gantt" modelId="fh-project-model"/>
-          
-        </div>
-
-      </div>
-      <div>Page 2</div>
-    </core-pages>
-
-    <firebase-element id="base" location="https://fhplanner.firebaseio.com/projects/issat" data="{{data}}" keys="{{keys}}"></firebase-element>
-
-    <!-- <template repeat="{{key in keys}}">
-      <p>{{key}}: {{data[key]}}</p>
-    </template> -->
-
-  </template>
-  <script>
-    (function () {
-      'use strict';
-
-      
+        Polymer({
 
 
-      Polymer({
 
-        ready: function() {
-          var pages = this.$.pages;
-          var tabs = this.$.tabs;
-          tabs.addEventListener('core-select', function () {
-              pages.selected = tabs.selected;
-          });
-        },
-
-        observe: {
-          // dataChanged only called if data is pointed at a new object
-          // changes to data's _properties or sub-properites are not observed_
-          data: 'dataChanged',
-          // dataNameChanged called if `data.name` changes
-          'data.tasks[0].name': 'dataNameChanged'
-        },
-        dataChanged: function() {
-          console.dir(this.data);
-        },
-        dataNameChanged: function() {
-          console.log('dataNameChanged');
-        }
-
-
-      });
+        });
 
     })();
-  </script>
+    </script>
 </polymer-element>

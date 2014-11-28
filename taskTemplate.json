@@ -1,0 +1,20 @@
+{
+  "actualWork" : "",
+  "assignedWork" : "",
+  "calendarId" : "",
+  "createdByUserId" : "",
+  "createdTimestamp" : "",
+  "duration" : 1,
+  "endDate" : "",
+  "hasChild" : false,
+  "level" : "",
+  "name" : "",
+  "outlineNumber" : 0,
+  "parentId" : "",
+  "position" : "",
+  "resourceAssignments" : "",
+  "resourceSchedules" : "",
+  "scheduledWork" : "",
+  "startDate" : "",
+  "uid" : ""
+}

@@ -1,0 +1,216 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-dropdown/paper-dropdown.html">
+<link rel="import" href="../../bower_components/core-icon-button/core-icon-button.html">
+<link rel="import" href="../../bower_components/core-icons/core-icons.html">
+<link rel="import" href="../../bower_components/core-icons/editor-icons.html">
+<link rel="import" href="../../bower_components/core-selector/core-selector.html">
+<link rel="import" href="../../bower_components/firebase-element/firebase-element.html">
+<link rel="import" href="../../bower_components/polymer-filters/polymer-filters.html">
+
+
+<polymer-element name="fh-project-teams" attributes="teamId">
+    <template>
+        <link rel="stylesheet" href="fh-project-teams.css">
+
+        <firebase-element id="base" location="https://fhplanner.firebaseio.com/teams"
+            data="{{teamsData}}" keys="{{teamKeys}}" childEvents on-child-changed="{{childChanged}}"></firebase-element>
+
+        <core-selector id="teamSelector" target="{{$.teamList}}" itemsSelector="tr" on-core-select="{{selectAction}}"></core-selector>
+        
+        <section style="overflow-x:scroll;overflow-y:hidden;">
+            <h1>{{teamData['name']}}</h1>
+            <section id="main">
+                <div style="position:fixed; background-color:white; width:100%;">
+                    <paper-icon-button icon="editor:vertical-align-bottom" on-click="{{insertTeamBelow}}"></paper-icon-button>
+                    <paper-icon-button icon="editor:vertical-align-top" on-click="{{insertTeamAbove}}"></paper-icon-button>
+                    <paper-icon-button icon="editor:vertical-align-top" on-click="{{moveUpAction}}"></paper-icon-button>
+                    <paper-icon-button icon="editor:vertical-align-top" on-click="{{moveDownAction}}"></paper-icon-button>
+                    <paper-icon-button icon="delete" on-click="{{deleteAction}}"></paper-icon-button>
+                </div>
+                <table id="team-grid-table" style="padding-top:40px;">
+                    <thead>
+                        <tr style="height:40px">
+                            <th style="width:35px;"></th>
+                            <th style="width:25px;"></th>
+                            <th style="width:300px;">name</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teamList">
+                        <template repeat="{{teamKey, index in teamKeys}}">
+                            <tr uid="{{teamsData[teamKey].uid}}" index="{{index}}" team="{{team}}" on-dblclick="{{editAction}}" on-tap="{{tapAction}}" on-keyup="{{keyupAction}}" on-keypress="{{keypressAction}}" touch-action="pan-x pan-y">
+                                <template if="{{teamKey === editingTeam}}">
+                                    <th>
+                                        <span>{{index+1}}</span>
+                                        <paper-icon-button icon="create"></paper-icon-button>
+                                    </th>
+                                    <td>
+                                        <div class="teamsStatus cvcColorSquare" status="{{teamsData[teamKey].status}}"></div>
+                                    </td>
+                                    <td>
+                                        <input name="name" value="{{teamsData[teamKey].name}}" placeholder="name" on-change="{{changeAction}}">
+                                    </td>
+                                </template>
+                                <template if="{{teamKey !== editingTeam}}">
+                                    <th>
+                                        <span>{{index+1}}</span>
+                                        <paper-icon-button icon="create"></paper-icon-button>
+                                    </th>
+                                    <td class="">
+                                        <div class="teams[teamId]tatus cvcColorSquare" status="{{teamsData[teamKey].status}}"></div>
+                                    </td>
+                                    <td>
+                                        <a href="/#/{{teamKey}}">{{teamsData[teamKey].name}}</a>
+                                    </td>
+                                </template>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </section>
+        </section>
+    </template>
+    <script>
+    (function() {
+        'use strict';
+
+        Polymer({
+            
+            editingTeam: "",
+            selectedTeam: "",
+            
+            insertTeamBelow: function() {
+                var teamsRef = this.$.base.ref,
+                    newTeamRef = teamsRef.push(),
+                    newTeamKey = newTeamRef.name(),
+                    rootRef = teamsRef.root(),
+                    teamTemplateRef = rootRef.child('configuration/templates/team');
+                    
+                teamTemplateRef.once('value', function(snapshot) {
+                    newTeamRef.set(snapshot.val());
+                    newTeamRef.update({
+                        "uid": newTeamKey,
+                        "name": "New Team ",
+                        "createdByUserId": "google:105148197807515785380",
+                        "createdTimestamp": Firebase.ServerValue.TIMESTAMP
+                    });
+
+                    // Add an initial project for the team in the projects list
+                    // Projects for the team will be added under the team key for fast access
+                    var projectsRootRef = rootRef.child('projects'),
+                        projectTemplateRef = rootRef.child('configuration/templates/project'),
+                        newTeamProjectsObject = {},
+                        teamProjectsRef, 
+                        newProjectRef,
+                        newProjectKey;
+
+                    // Add the team key to the projects list
+                    newTeamProjectsObject[newTeamKey] = "";
+                    projectsRootRef.update(newTeamProjectsObject);
+
+                    // Create a new project key under the team key
+                    teamProjectsRef = projectsRootRef.child(newTeamKey);
+                    newProjectRef = teamProjectsRef.push();
+                    newProjectKey = newProjectRef.name();
+
+                    // Add the project attributes under the new project key
+                    projectTemplateRef.once('value', function(snapshot) {
+                        newProjectRef.set(snapshot.val());
+                        newProjectRef.update({
+                            "uid": newProjectKey,
+                            "name": "New Project ",
+                            "startDate": moment().format('YYYY-MM-DD'),
+                            "endDate": moment().format('YYYY-MM-DD'),
+                            "createdByUserId": "google:105148197807515785380",
+                            "createdTimestamp": Firebase.ServerValue.TIMESTAMP
+                        });
+
+                        // Add an initial task for the project in the tasks list
+                        // Tasks for the project will be added under the project key for fast access
+                        var tasksRootRef = rootRef.child('tasks'),
+                            taskTemplateRef = rootRef.child('configuration/templates/task'),
+                            newProjectTasksObject = {},
+                            projectTasksRef, 
+                            newTaskRef;
+
+                        // Add the project key to the tasks list
+                        newProjectTasksObject[newProjectKey] = "";
+                        tasksRootRef.update(newProjectTasksObject);
+
+                        // Create a new task key under the project key
+                        projectTasksRef = tasksRootRef.child(newProjectKey);
+                        newTaskRef = projectTasksRef.push();
+
+                        // Add the task attributes under the new task key
+                        taskTemplateRef.once('value', function(snapshot) {
+                            newTaskRef.setWithPriority(snapshot.val(), 10000);
+                            newTaskRef.update({
+                                "uid": newTaskRef.name(),
+                                "name": "New Task ",
+                                "startDate": moment().format('YYYY-MM-DD'),
+                                "endDate": moment().format('YYYY-MM-DD'),
+                                "createdByUserId": "google:105148197807515785380",
+                                "createdTimestamp": Firebase.ServerValue.TIMESTAMP
+                            });
+                        }, function(errorObject) {
+                            console.log('The read failed: ' + errorObject.code);
+                        });
+
+                    }, function(errorObject) {
+                        console.log('The read failed: ' + errorObject.code);
+                    });
+                }, function(errorObject) {
+                    console.log('The read failed: ' + errorObject.code);
+                });
+            },
+            editAction: function(event, detail, sender) {
+                var teamKey = event.target.templateInstance.model.teamKey,
+                    team = this.teamsData[teamKey];
+                this.editingTeam = teamKey;
+                //this.shadowRoot.querySelector('input[name="name"]').focus();
+                // schedule focus for the end of microteam, when the input will be visible
+                this.asyncMethod(function() {
+                    //this.$.edit.focus();
+                });
+            },
+            changeAction: function(event, detail, sender) {
+                console.log('changeAction');
+                //this.$.base.commitProperty('teams[this.teamId]');
+                var teamKey = event.path[2].templateInstance.model.teamKey,
+                    teamAttribute = event.path[0].name,
+                    teamAttributeValue = event.path[0].value,
+                    updateObject = {},
+                    fbChildRef = this.$.base.ref.child(teamKey);
+                updateObject[teamAttribute] = teamAttributeValue;
+                fbChildRef.update(updateObject);
+                fbChildRef.on('value', function(snapshot) {
+                    console.log(snapshot.val());
+                }, function(errorObject) {
+                    console.log('The read failed: ' + errorObject.code);
+                });
+
+            },
+            
+            deleteAction: function() {
+                if (this.selectedTeam) {
+                    var fbChildPath = this.selectedTeam,
+                        fbChildRef = this.$.base.ref.child(fbChildPath);
+                    fbChildRef.remove();
+                }
+            },
+            selectAction: function(event, detail, sender) {
+                console.log('selectAction');
+                var teamKey = detail.item.templateInstance.model.teamKey;
+                if (detail.isSelected) {
+                    this.selectedTeam = teamKey;
+                    //event.detail.item.querySelector('input[name="name"]').focus();
+                } else {
+                    this.editingTeam = '';
+                }
+            }
+            
+
+        });
+
+    })();
+    </script>
+</polymer-element>
