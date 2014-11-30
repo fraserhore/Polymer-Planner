@@ -24,7 +24,6 @@
     tbody {
         th, td {
             overflow: hidden;
-            padding:4px 2px;
             &.noClip{
                 overflow: visible;
             }
@@ -45,6 +44,24 @@
 
 .hidden {
  display: none;
+}
+
+
+.task-name {
+	display: inline-block;
+	vertical-align: top;
+	padding: 10px 0;
+}
+paper-icon-button.expander {
+	margin: 0px -10px 0 -26px;
+	&::shadow #icon {
+		width: 18px;
+		height: 18px; 
+} }
+
+tbody paper-icon-button::shadow #icon {
+	width: 18px;
+	height: 18px;
 }
 
 .core-selected td, .core-selected input {

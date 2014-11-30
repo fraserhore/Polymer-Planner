@@ -18,6 +18,7 @@
         <core-selector id="teamSelector" target="{{$.teamList}}" itemsSelector="tr" on-core-select="{{selectAction}}"></core-selector>
         
         <section style="overflow-x:scroll;overflow-y:hidden;">
+            <h1>{{user.google.displayName}}</h1>
             <h1>{{teamData['name']}}</h1>
             <section id="main">
                 <div style="position:fixed; background-color:white; width:100%;">
@@ -75,13 +76,30 @@
 
         Polymer({
             
+            rootRef: "",
+            userRef: "",
+            teamsRef: "",
+            user: "",
+            userAuthData: "",
             editingTeam: "",
             selectedTeam: "",
             
+            domReady: function() {
+                var self = this;
+                this.rootRef = this.$.base.ref.root();
+                this.userAuthData = document.querySelector('fh-firebase-login').user;
+                this.userRef = this.rootRef.child('users/'+this.userAuthData.uid);
+                this.userRef.once('value', function(snapshot) {
+                    self.user = snapshot.val();
+                }, function(errorObject) {
+                    console.log('The read failed: ' + errorObject.code);
+                });
+            },
             insertTeamBelow: function() {
-                var teamsRef = this.$.base.ref,
+                var self = this,
+                    teamsRef = this.$.base.ref,
                     newTeamRef = teamsRef.push(),
-                    newTeamKey = newTeamRef.name(),
+                    newTeamKey = newTeamRef.key(),
                     rootRef = teamsRef.root(),
                     teamTemplateRef = rootRef.child('configuration/templates/team');
                     
@@ -110,7 +128,7 @@
                     // Create a new project key under the team key
                     teamProjectsRef = projectsRootRef.child(newTeamKey);
                     newProjectRef = teamProjectsRef.push();
-                    newProjectKey = newProjectRef.name();
+                    newProjectKey = newProjectRef.key();
 
                     // Add the project attributes under the new project key
                     projectTemplateRef.once('value', function(snapshot) {
@@ -120,35 +138,40 @@
                             "name": "New Project ",
                             "startDate": moment().format('YYYY-MM-DD'),
                             "endDate": moment().format('YYYY-MM-DD'),
-                            "createdByUserId": "google:105148197807515785380",
+                            "createdByUserId": self.user.uid,
                             "createdTimestamp": Firebase.ServerValue.TIMESTAMP
                         });
 
                         // Add an initial task for the project in the tasks list
-                        // Tasks for the project will be added under the project key for fast access
+                        // Tasks for the project will be added under the team key and the project key for fast access
                         var tasksRootRef = rootRef.child('tasks'),
                             taskTemplateRef = rootRef.child('configuration/templates/task'),
+                            tasksTeamRef,
                             newProjectTasksObject = {},
-                            projectTasksRef, 
+                            tasksProjectRef, 
                             newTaskRef;
 
-                        // Add the project key to the tasks list
+                        // Add the team key to the tasks list
+                        tasksRootRef.update(newTeamProjectsObject);
+
+                        // Add the project key to the tasks list under the team key
                         newProjectTasksObject[newProjectKey] = "";
-                        tasksRootRef.update(newProjectTasksObject);
+                        tasksTeamRef = tasksRootRef.child(newTeamKey);
+                        tasksTeamRef.update(newProjectTasksObject);
 
                         // Create a new task key under the project key
-                        projectTasksRef = tasksRootRef.child(newProjectKey);
-                        newTaskRef = projectTasksRef.push();
+                        tasksProjectRef = tasksTeamRef.child(newProjectKey);
+                        newTaskRef = tasksProjectRef.push();
 
                         // Add the task attributes under the new task key
                         taskTemplateRef.once('value', function(snapshot) {
                             newTaskRef.setWithPriority(snapshot.val(), 10000);
                             newTaskRef.update({
-                                "uid": newTaskRef.name(),
+                                "uid": newTaskRef.key(),
                                 "name": "New Task ",
                                 "startDate": moment().format('YYYY-MM-DD'),
                                 "endDate": moment().format('YYYY-MM-DD'),
-                                "createdByUserId": "google:105148197807515785380",
+                                "createdByUserId": self.user.uid,
                                 "createdTimestamp": Firebase.ServerValue.TIMESTAMP
                             });
                         }, function(errorObject) {
@@ -192,9 +215,14 @@
             
             deleteAction: function() {
                 if (this.selectedTeam) {
-                    var fbChildPath = this.selectedTeam,
-                        fbChildRef = this.$.base.ref.child(fbChildPath);
-                    fbChildRef.remove();
+                    var selectedTeamId = this.selectedTeam,
+                        rootRef = this.$.base.ref.root(),
+                        teamsTeamRef = this.$.base.ref.child(selectedTeamId),
+                        projectsTeamRef = rootRef.child('projects/'+selectedTeamId),
+                        tasksTeamRef = rootRef.child('tasks/'+selectedTeamId);
+                    teamsTeamRef.remove();
+                    projectsTeamRef.remove();
+                    tasksTeamRef.remove();
                 }
             },
             selectAction: function(event, detail, sender) {

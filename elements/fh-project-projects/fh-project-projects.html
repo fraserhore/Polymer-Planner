@@ -105,9 +105,10 @@
             selectedProject: "",
             
             insertProjectBelow: function() {
-                var projectsRef = this.$.base.ref,
+                var self = this,
+                    projectsRef = this.$.base.ref,
                     newProjectRef = projectsRef.push(),
-                    newProjectKey = newProjectRef.name(),
+                    newProjectKey = newProjectRef.key(),
                     rootRef = projectsRef.root(),
                     projectTemplateRef = rootRef.child('configuration/templates/project');
                     
@@ -123,27 +124,33 @@
                     });
 
                     // Add an initial task for the project in the tasks list
-                    // Tasks for the project will be added under the project key for fast access
+                    // Tasks for the project will be added under the team key and the project key for fast access
                     var tasksRootRef = rootRef.child('tasks'),
                         taskTemplateRef = rootRef.child('configuration/templates/task'),
+                        tasksTeamRef,
+                        newTeamProjectsObject = {},
                         newProjectTasksObject = {},
-                        projectTasksRef, 
+                        tasksProjectRef,
                         newTaskRef;
-                    console.log("test");
-                    // Add the project key to the tasks list
+
+                    // Add the team key to the tasks list
+                    newTeamProjectsObject[self.teamId] = "";
+                    tasksRootRef.update(newTeamProjectsObject);
+
+                    // Add the project key to the tasks list under the team key
                     newProjectTasksObject[newProjectKey] = "";
-                    console.log(newProjectTasksObject);
-                    tasksRootRef.update(newProjectTasksObject);
+                    tasksTeamRef = tasksRootRef.child(self.teamId);
+                    tasksTeamRef.update(newProjectTasksObject);
 
                     // Create a new task key under the project key
-                    projectTasksRef = tasksRootRef.child(newProjectKey);
-                    newTaskRef = projectTasksRef.push();
+                    tasksProjectRef = tasksTeamRef.child(newProjectKey);
+                    newTaskRef = tasksProjectRef.push();
 
                     // Add the task attributes under the new task key
                     taskTemplateRef.once('value', function(snapshot) {
                         newTaskRef.setWithPriority(snapshot.val(), 10000);
                         newTaskRef.update({
-                            "uid": newTaskRef.name(),
+                            "uid": newTaskRef.key(),
                             "name": "New Task ",
                             "startDate": moment().format('YYYY-MM-DD'),
                             "endDate": moment().format('YYYY-MM-DD'),
@@ -187,9 +194,12 @@
             
             deleteAction: function() {
                 if (this.selectedProject) {
-                    var fbChildPath = this.selectedProject,
-                        fbChildRef = this.$.base.ref.child(fbChildPath);
-                    fbChildRef.remove();
+                    var selectedProjectId = this.selectedProject,
+                        rootRef = this.$.base.ref.root(),
+                        projectsProjectRef = this.$.base.ref.child(selectedProjectId),
+                        tasksProjectRef = rootRef.child('tasks/'+this.teamId+'/'+selectedProjectId);
+                    projectsProjectRef.remove();
+                    tasksProjectRef.remove();
                 }
             },
             selectAction: function(event, detail, sender) {

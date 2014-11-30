@@ -195,21 +195,44 @@
 
 
             rootRef: {},
-            currentUser: {},
+            usersRef: {},
+            userRef: {},
             activeForm: 'login',
 
             ready: function() {
                 var self = this;
 
                 this.rootRef = new Firebase('https://fhplanner.firebaseio.com');
+                this.usersRef = this.rootRef.child('users');
                 console.log(this.activeForm);
-                //currentUser: rootRef.getAuth(),
+
                 // whenever authentication happens send a popup
                 this.rootRef.onAuth(function globalOnAuth(authData) {
-
                     if (authData) {
                     	self.activeForm = null;
                     	self.user = authData;
+                    	self.userRef = self.usersRef.child(authData.uid);
+
+                    	// set up presence system
+                    	// since I can connect from multiple devices or browser tabs, we store each connection instance separately
+						// any time that connectionsRef's value is null (i.e. has no children) I am offline
+						var myConnectionsRef = self.userRef.child('connections');
+						// stores the timestamp of my last disconnect (the last time I was seen online)
+						var lastOnlineRef = self.userRef.child('lastOnline');
+						var connectedRef = self.rootRef.child('.info/connected');
+						connectedRef.on('value', function(snapshot) {
+						  if (snapshot.val() === true) {
+						    // We're connected (or reconnected)! Do anything here that should happen only if online (or on reconnect)
+						    // add this device to my connections list
+						    // this value could contain info about the device or a timestamp too
+						    var con = myConnectionsRef.push(true);
+						    // when I disconnect, remove this device
+						    con.onDisconnect().remove();
+						    // when I disconnect, update the last time I was seen online
+						    lastOnlineRef.onDisconnect().set(Firebase.ServerValue.TIMESTAMP);
+						  }
+						});
+
                         self.showAlert({
                             title: 'Logged in!',
                             detail: 'Using ' + authData.provider,
@@ -222,7 +245,6 @@
                             className: 'alert-info'
                         });
                     }
-
                 });
             },
 
@@ -231,9 +253,23 @@
             thirdPartyLogin: function(provider) {
                 var self = this;
                 return new Promise(function(resolve, reject) {
+                	// prefer pop-ups, so we don't navigate away from the page
                     self.rootRef.authWithOAuthPopup(provider, function(err, user) {
                         if (err) {
-                            reject(err);
+                        	if (err.code === "TRANSPORT_UNAVAILABLE") {
+						      	// fall-back to browser redirects, and pick up the session
+						      	// automatically when we come back to the origin page
+	                            self.rootRef.authWithOAuthRedirect(provider, function(err, user) {
+			                        if (err) {
+			                            reject(err);
+			                        }
+			                        if (user) {
+			                            resolve(user);
+			                        }
+			                    });
+	                        } else {
+	                        	reject(err);
+	                        }
                         }
                         if (user) {
                             resolve(user);
@@ -311,11 +347,11 @@
             handleAuthResponse: function(promise, route) {
                 var self = this;
                 promise.then(function(authData) {
-                    var userRef = self.rootRef.child('users').child(authData.uid);
-                    userRef.once('value', function(snap) {
-                        var user = snap.val();
+                    var userRef = self.usersRef.child(authData.uid);
+                    userRef.once('value', function(snapshot) {
+                        var user = snapshot.val();
                         if (!user) {
-                        	self.rootRef.child('users').child(authData.uid).set(authData);
+                        	self.usersRef.child(authData.uid).set(authData);
                         }
                     });
                     
@@ -423,8 +459,8 @@
 
                 // Load user info
                 userRef = this.rootRef.child('users').child(user.uid);
-                userRef.once('value', function(snap) {
-                    var user = snap.val();
+                userRef.once('value', function(snapshot) {
+                    var user = snapshot.val();
                     if (!user) {
                         return;
                     }

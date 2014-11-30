@@ -10,12 +10,12 @@
 <link rel="import" href="../../bower_components/font-roboto/roboto.html">
 <link rel="import" href="../fh-project-grid-editor/fh-project-grid-editor.html">
 
-<polymer-element name="fh-project" attributes="teamId projectId">
+<polymer-element name="fh-project" attributes="user teamId projectId">
     <template>
         <link rel="stylesheet" href="fh-project.css">
         <section horizontal layout>
             <div id="left-panel">
-                <fh-project-grid-editor id="task-grid" data="{{data}}" teamId="{{teamId}}" projectId="{{projectId}}"></fh-project-grid-editor>
+                <fh-project-grid-editor id="task-grid" user="{{user}}" teamId="{{teamId}}" projectId="{{projectId}}"></fh-project-grid-editor>
             </div>
             <core-splitter direction="left"></core-splitter>
             <div id="right-panel" flex>

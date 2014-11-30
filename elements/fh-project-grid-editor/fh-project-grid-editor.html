@@ -1,8 +1,11 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/core-header-panel/core-header-panel.html">
+<link rel="import" href="../../bower_components/core-toolbar/core-toolbar.html">
 <link rel="import" href="../../bower_components/paper-dropdown/paper-dropdown.html">
 <link rel="import" href="../../bower_components/core-icon-button/core-icon-button.html">
 <link rel="import" href="../../bower_components/core-icons/core-icons.html">
 <link rel="import" href="../../bower_components/core-icons/editor-icons.html">
+<link rel="import" href="../../bower_components/x-fontawesome/dist/x-fontawesome.html">
 <link rel="import" href="../../bower_components/core-selector/core-selector.html">
 <link rel="import" href="../../bower_components/firebase-element/firebase-element.html">
 <link rel="import" href="../../bower_components/polymer-filters/polymer-filters.html">
@@ -14,7 +17,7 @@
 	<template>
 		<link rel="stylesheet" href="fh-project-grid-editor.css">
 
-		<firebase-element id="base" location="https://fhplanner.firebaseio.com/tasks/{{projectId}}" 
+		<firebase-element id="base" location="https://fhplanner.firebaseio.com/tasks/{{teamId}}/{{projectId}}" 
 			data="{{tasksData}}" keys="{{taskKeys}}" childEvents on-child-changed="{{childChanged}}"></firebase-element>
 		<firebase-element id="projectBase" location="https://fhplanner.firebaseio.com/projects/{{teamId}}/{{projectId}}" 
 			data="{{projectData}}" keys="{{projectKeys}}" childEvents on-child-changed="{{}}"></firebase-element>
@@ -23,141 +26,170 @@
 		
 		<core-selector id="taskSelector" target="{{$.taskapp}}" itemsSelector="tr" on-core-select="{{selectAction}}"></core-selector>
 
-		<section style="overflow-x:scroll;overflow-y:hidden;">
-			<h1><a href="/#/{{teamId}}">{{teamData['name']}}</a></h1>
-			<h2>{{projectData['name']}}</h2>
-			<section id="main">
-				<div style="position:fixed; background-color:white; width:100%;">
-					<paper-icon-button icon="editor:vertical-align-bottom" on-click="{{insertTaskBelow}}"></paper-icon-button>
-					<paper-icon-button icon="editor:vertical-align-top" on-click="{{insertTaskAbove}}"></paper-icon-button>
-					<paper-icon-button icon="editor:vertical-align-top" on-click="{{moveUpAction}}"></paper-icon-button>
-					<paper-icon-button icon="editor:vertical-align-top" on-click="{{moveDownAction}}"></paper-icon-button>
-					<paper-icon-button icon="arrow-forward" on-click="{{demoteAction}}"></paper-icon-button>
-					<paper-icon-button icon="arrow-back" on-click="{{promoteAction}}"></paper-icon-button>
-					<paper-icon-button icon="delete" on-click="{{deleteAction}}"></paper-icon-button>
-				</div>
-				<table id="task-grid-table" style="padding-top:40px;">
-					<thead>
-						<tr style="height:40px">
-							<th style="width:35px;"></th>
-							<th style="width:25px;"></th>
-							<th style="width:30px;">code/short name</th>
-							<th style="width:300px;">name</th>
-							<th style="width:80px;">start</th>
-							<th style="width:80px;">end</th>
-							<th style="width:50px;">dur.</th>
-							<th style="width:50px;">dep.</th>
-							<th style="width:200px;">assignees</th>
-							<th style="width:50px;">work</th>
-							<th style="width:50px;">intensity</th>
-							<th style="width:50px;">urgency</th>
-						</tr>
-					</thead>
-					<tbody id="taskapp">
-						<template repeat="{{taskKey, index in taskKeys}}">
-							<tr uid="{{tasksData[taskKey].uid}}" index="{{index}}" task="{{task}}" level="{{tasksData[taskKey].level}}" on-dblclick="{{editAction}}" on-tap="{{tapAction}}" on-keyup="{{keyupAction}}" on-keypress="{{keypressAction}}" touch-action="pan-x pan-y">
-								<template if="{{taskKey === editingTask}}">
-									<th>
-										<span>{{index+1}}</span>
-										<paper-icon-button icon="create"></paper-icon-button>
-									</th>
-									<td>
-										<div class="tasksStatus cvcColorSquare" status="{{tasksData[taskKey].status}}"></div>
-									</td>
-									<td>
-										<input name="code" value="{{tasksData[taskKey].code}}" on-change="{{changeAction}}" on-blur="">
-									</td>
-									<td style="padding-left:{{tasksData[taskKey].level*30}}px;">
-										<template if="{{tasksData[taskKey].hasChild}}">
-											<paper-icon-button icon="add"></paper-icon-button>
-										</template>
+		<section id="main" style="overflow-x:scroll;overflow-y:hidden;">
+			<core-toolbar>
+				<span><a href="/#/{{teamId}}">{{teamData['name']}}</a> / {{projectData['name']}}</span>
+				<span flex></span>
+				<x-fontawesome></x-fontawesome>
+				<paper-icon-button icon="polymer" on-click="{{testAction}}" title="insert below">
+				</paper-icon-button>
+				<paper-icon-button icon="editor:vertical-align-bottom" on-click="{{insertTaskBelow}}" title="insert below">
+				</paper-icon-button>
+				<paper-icon-button icon="editor:vertical-align-top" on-click="{{insertTaskAbove}}" title="insert above">
+				</paper-icon-button>
+				<paper-icon-button icon="fontawesome-icons:fa-long-arrow-up" on-click="{{moveUpAction}}" title="move up">
+				</paper-icon-button>
+				<paper-icon-button icon="fontawesome-icons:fa-long-arrow-down" on-click="{{moveDownAction}}" title="move down">
+				</paper-icon-button>
+				<paper-icon-button icon="fontawesome-icons:fa-long-arrow-right" on-click="{{demoteAction}}" title="demote">
+				</paper-icon-button>
+				<paper-icon-button icon="fontawesome-icons:fa-long-arrow-left" on-click="{{promoteAction}}" title="promote">
+				</paper-icon-button>
+				<paper-icon-button icon="delete" on-click="{{deleteAction}}"></paper-icon-button>
+			</core-toolbar>
+			<table id="task-grid-table" style="">
+				<thead>
+					<tr style="height:40px">
+						<th style="width:35px;"></th>
+						<th style="width:25px;"></th>
+						<th style="width:30px;">WBS</th>
+						<th style="width:300px;">name</th>
+						<th style="width:80px;">start</th>
+						<th style="width:80px;">end</th>
+						<th style="width:50px;">dur.</th>
+						<th style="width:50px;">dep.</th>
+						<th style="width:200px;">assignees</th>
+						<th style="width:50px;">work</th>
+						<th style="width:50px;">intensity</th>
+						<th style="width:50px;">urgency</th>
+					</tr>
+				</thead>
+				<tbody id="taskapp">
+					<template repeat="{{taskKey, index in taskKeys}}">
+						<tr uid="{{tasksData[taskKey].uid}}" index="{{index}}" task="{{task}}" level="{{tasksData[taskKey].level}}" on-dblclick="{{editAction}}" on-tap="{{tapAction}}" on-keyup="{{keyupAction}}" on-keypress="{{keypressAction}}" touch-action="pan-x pan-y">
+							<template if="{{taskKey === editingTask}}">
+								<th>
+									<span>{{index+1}}</span>
+									<paper-icon-button icon="create"></paper-icon-button>
+								</th>
+								<td>
+									<div class="tasksStatus cvcColorSquare" status="{{tasksData[taskKey].status}}"></div>
+								</td>
+								<td>
+									<input name="code" value="{{tasksData[taskKey].wbs}}" on-change="{{changeAction}}" on-blur="">
+								</td>
+								<td style="padding-left:{{(tasksData[taskKey].level*20)+26}}px;">
+									<paper-icon-button class="expander" icon="create"></paper-icon-button>
+									<span class="task-name">
 										<input name="name" value="{{tasksData[taskKey].name}}" placeholder="name" on-change="{{changeAction}}">
-									</td>
-									<td>
-										<input name="startDate" value="{{tasksData[taskKey].startDate}}" max="{{tasksData[taskKey].endDate}}" type="date" on-change="{{changeAction}}">
-									</td>
-									<td>
-										<input name="endDate" value="{{tasksData[taskKey].endDate}}" min="{{tasksData[taskKey].startDate}}" type="date" on-change="{{changeAction}}">
-									</td>
-									<td>
-										<input name="duration" value="{{tasksData[taskKey].duration}}" on-change="{{changeAction}}">
-									</td>
-									<td>
-										<input name="depends" value="{{tasksData[taskKey].depends}}" on-change="{{changeAction}}">
-									</td>
-									<td></td>
-									<td relative>
-										
-										<core-icon-button id="trigger" icon="menu"></core-icon-button>
-									    <core-dropdown relatedTarget="{{$.trigger}}">Test
-									      <core-menu>
-									        <core-item>Cut</core-item>
-									        <core-item>Copy</core-item>
-									        <core-item>Paste</core-item>
-									      </core-menu>
-									    </core-dropdown>
-									</td>
-									<td>{{(tasksData[taskKey].estimatedWork ? tasksData[taskKey].estimatedWork/tasksData[taskKey].duration*100 : 0) | round}}%</td>
-									<td>{{(tasksData[taskKey].estimatedWork ? tasksData[taskKey].estimatedWork/tasksData[taskKey].duration*100 : 0) | round}}%</td>
-								</template>
-								<template if="{{taskKey !== editingTask}}">
-									<th>
-										<span>{{index+1}}</span>
-										<paper-icon-button icon="create"></paper-icon-button>
-									</th>
-									<td class="">
-										<div class="tasks[projectId]tatus cvcColorSquare" status="{{tasksData[taskKey].status}}"></div>
-									</td>
-									<td>{{tasksData[taskKey].code}}</td>
-									<td style="padding-left:{{(tasksData[taskKey].level*36)+36}}px;">
-										<template if="{{tasksData[taskKey].hasChild}}">
-											<paper-icon-button icon="remove" on-click="{{toggleCollapseAction}}" style="width: 20px; height: 20px; margin-left:-36px;"></paper-icon-button>
-										</template>
-										{{tasksData[taskKey].name}}
-									</td>
-									<td>{{tasksData[taskKey].startDate}}</td>
-									<td>{{tasksData[taskKey].endDate}}</td>
-									<td>{{tasksData[taskKey].duration}}</td>
-									<td>{{tasksData[taskKey].depends}}</td>
-									<td></td>
-									<td style="position:relative; overflow:visible;">{{tasksData[taskKey].estimatedWork}}
-										<paper-icon-button id="trigger-{{taskKey}}" icon="expand-more" on-tap="{{toggleResourcesAction}}">
-										</paper-icon-button>
-									    <paper-dropdown class="assigned-resources-dropdown" valign="top" halign="left" relatedTarget="trigger-{{taskKey}}">
-									    	<table>
-									    		<thead>
-									    			<tr>
-									    				<th>Name</th>
-									    				<th>Role</th>
-									    				<th>Work</th>
-									    				<th><paper-icon-button icon="add" on-tap="{{addAssignmentAction}}"></paper-icon-button></th>
-									    			</tr>
-									    		</thead>
-									    		<tbody>
-									    			<template repeat="{{assignedWorkKey, assignedWorkIndex in assignedWorkKeys}}">
-									    			<tr>
-									    				<td>
-									    					<select>
-									    						<option value="{{tasksData[taskKey].assignedWork[assignedWorkKey].resourceId}}">{{tasksData[taskKey].assignedWork[assignedWorkKey].resourceId}}</option>
-									    					</select>
-									    				</td>
-									    				<td>{{tasksData[taskKey].assignedWork[assignedWorkKey].role}}</td>
-									    				<td>{{tasksData[taskKey].assignedWork[assignedWorkKey].work}}</td>
-									    				<td><paper-icon-button icon="remove" on-tap="{{addAssignmentAction}}"></paper-icon-button></td>
-									    			</tr>
-									    			</template>
-									    		</tbody>
-									    	</table>
-									    </paper-dropdown>
-									</td>
-									<td>{{(tasksData[taskKey].estimatedWork ? tasksData[taskKey].estimatedWork/tasksData[taskKey].duration*100 : 0) | round}}%</td>
-									<td>{{(tasksData[taskKey].estimatedWork ? tasksData[taskKey].estimatedWork/tasksData[taskKey].duration*100 : 0) | round}}%</td>
-								</template>
-							</tr>
-						</template>
-					</tbody>
-				</table>
-			</section>
+									</span>
+								</td>
+								<td>
+									<input name="startDate" value="{{tasksData[taskKey].startDate}}" max="{{tasksData[taskKey].endDate}}" type="date" on-change="{{changeAction}}">
+								</td>
+								<td>
+									<input name="endDate" value="{{tasksData[taskKey].endDate}}" min="{{tasksData[taskKey].startDate}}" type="date" on-change="{{changeAction}}">
+								</td>
+								<td>
+									<input name="duration" value="{{tasksData[taskKey].duration}}" on-change="{{changeAction}}">
+								</td>
+								<td>
+									<input name="depends" value="{{tasksData[taskKey].depends}}" on-change="{{changeAction}}">
+								</td>
+								<td relative>
+									<paper-icon-button id="trigger-{{taskKey}}" icon="expand-more" on-tap="{{toggleResourcesAction}}">
+									</paper-icon-button>
+								    <paper-dropdown class="assigned-resources-dropdown" valign="top" halign="left" relatedTarget="trigger-{{taskKey}}">
+								    	<table>
+								    		<thead>
+								    			<tr>
+								    				<th>Name</th>
+								    				<th>Role</th>
+								    				<th>Work</th>
+								    				<th><paper-icon-button icon="add" on-tap="{{addAssignmentAction}}"></paper-icon-button></th>
+								    			</tr>
+								    		</thead>
+								    		<tbody>
+								    			<template repeat="{{assignedWorkKey, assignedWorkIndex in assignedWorkKeys}}">
+								    			<tr>
+								    				<td>
+								    					<select>
+								    						<option value="{{tasksData[taskKey].assignedWork[assignedWorkKey].resourceId}}">{{tasksData[taskKey].assignedWork[assignedWorkKey].resourceId}}</option>
+								    					</select>
+								    				</td>
+								    				<td>{{tasksData[taskKey].assignedWork[assignedWorkKey].role}}</td>
+								    				<td>{{tasksData[taskKey].assignedWork[assignedWorkKey].work}}</td>
+								    				<td><paper-icon-button icon="remove" on-tap="{{addAssignmentAction}}"></paper-icon-button></td>
+								    			</tr>
+								    			</template>
+								    		</tbody>
+								    	</table>
+								    </paper-dropdown>
+								</td>
+								<td relative>
+								</td>
+								<td>{{(tasksData[taskKey].estimatedWork ? tasksData[taskKey].estimatedWork/tasksData[taskKey].duration*100 : 0) | round}}%</td>
+								<td>{{(tasksData[taskKey].estimatedWork ? tasksData[taskKey].estimatedWork/tasksData[taskKey].duration*100 : 0) | round}}%</td>
+							</template>
+							<template if="{{taskKey !== editingTask}}">
+								<th>
+									<span>{{index+1}}</span>
+									<paper-icon-button icon="create"></paper-icon-button>
+								</th>
+								<td class="">
+									<div class="tasks[projectId]tatus cvcColorSquare" status="{{tasksData[taskKey].status}}"></div>
+								</td>
+								<td>{{tasksData[taskKey].level}}</td>
+								<td style="padding-left:{{(tasksData[taskKey].level*20)+26}}px;">
+									<template if="{{tasksData[taskKey].hasChild}}">
+										<paper-icon-button class="expander" icon="remove" on-click="{{toggleCollapseAction}}"></paper-icon-button>
+									</template>
+									<span class="task-name">{{tasksData[taskKey].name}}</span>
+								</td>
+								<td>{{tasksData[taskKey].startDate}}</td>
+								<td>{{tasksData[taskKey].endDate}}</td>
+								<td>{{tasksData[taskKey].duration}}</td>
+								<td>{{tasksData[taskKey].depends}}</td>
+								<td>
+									<paper-icon-button id="trigger-{{taskKey}}" icon="expand-more" on-tap="{{toggleResourcesAction}}">
+									</paper-icon-button>
+								    <paper-dropdown class="assigned-resources-dropdown" valign="top" halign="left" relatedTarget="trigger-{{taskKey}}">
+								    	<table>
+								    		<thead>
+								    			<tr>
+								    				<th>Name</th>
+								    				<th>Role</th>
+								    				<th>Work</th>
+								    				<th><paper-icon-button icon="add" on-tap="{{addAssignmentAction}}"></paper-icon-button></th>
+								    			</tr>
+								    		</thead>
+								    		<tbody>
+								    			<template repeat="{{assignedWorkKey, assignedWorkIndex in assignedWorkKeys}}">
+								    			<tr>
+								    				<td>
+								    					<select>
+								    						<option value="{{tasksData[taskKey].assignedWork[assignedWorkKey].resourceId}}">{{tasksData[taskKey].assignedWork[assignedWorkKey].resourceId}}</option>
+								    					</select>
+								    				</td>
+								    				<td>{{tasksData[taskKey].assignedWork[assignedWorkKey].role}}</td>
+								    				<td>{{tasksData[taskKey].assignedWork[assignedWorkKey].work}}</td>
+								    				<td><paper-icon-button icon="remove" on-tap="{{addAssignmentAction}}"></paper-icon-button></td>
+								    			</tr>
+								    			</template>
+								    		</tbody>
+								    	</table>
+								    </paper-dropdown>
+								</td>
+								<td style="position:relative; overflow:visible;">{{tasksData[taskKey].estimatedWork}}
+									
+								</td>
+								<td>{{(tasksData[taskKey].estimatedWork ? tasksData[taskKey].estimatedWork/tasksData[taskKey].duration*100 : 0) | round}}%</td>
+								<td>{{(tasksData[taskKey].estimatedWork ? tasksData[taskKey].estimatedWork/tasksData[taskKey].duration*100 : 0) | round}}%</td>
+							</template>
+						</tr>
+					</template>
+				</tbody>
+			</table>
 		</section>
 	</template>
 	<script src="../../bower_components/moment/moment.js"></script>
@@ -174,6 +206,11 @@
 
 		Polymer({
 
+			rootRef: "",
+            userRef: "",
+            tasksRef: "",
+            user: "",
+            userAuthData: "",
 			numberOfTasks: 0,
 			editingTask: "",
 			selectedTask: "",
@@ -186,23 +223,53 @@
 			observe: {
 				// dataChanged only called if data is pointed at a new object
 				// changes to data's _properties or sub-properites are not observed_
-				data: 'dataChanged',
+				tasksData: 'tasksDataChanged',
 				// dataNameChanged called if `data.name` changes
 				//'data.tasks[0].name': 'dataNameChanged'
 			},
+			domReady: function() {
+                var self = this;
+                this.tasksRef = this.$.base.ref,
+                this.rootRef = this.tasksRef.root();
+                this.userAuthData = document.querySelector('fh-firebase-login').user;
+                this.userRef = this.rootRef.child('users/'+this.userAuthData.uid);
+                this.userRef.once('value', function(snapshot) {
+                    self.user = snapshot.val();
+                }, function(errorObject) {
+                    console.log('The read failed: ' + errorObject.code);
+                });
+                this.tasksRef.orderByPriority().on('value', function(snapshot) {
+                	console.log(snapshot.val());
+                });
+            },
 			tasksDataChanged: function() {
-				this.numberOfTasks = this.tasksData.length;
+				console.log('tasksDataChanged');
+				//this.numberOfTasks = this.tasksData.length;
 			},
 			tasksDataNameChanged: function() {
 				console.log('tasksDataNameChanged');
-				//this.$.base.commitProperty('tasks[this.projectId]');
 			},
 			childChanged: function() {
 				console.log('childChanged');
+				//this.$.base.dataChanged();
+				//this.taskKeys = Object.keys(this.tasksData);
+				//console.log('added ', event.detail.name, ':', event.detail.value);
+
+			},
+			priorityChanged: function() {
+				console.log('priorityChanged');
+				this.$.base.locationChanged();
+			},
+
+			testAction: function() {
+				this.tasksRef.orderByPriority().once('value', function(snapshot) {
+                	console.log(snapshot.val());
+                	//this.tasksData = snapshot.val();
+                	//this.taskKeys = Object.keys(this.tasksData);
+                }, this);	
 			},
 			changeAction: function(event, detail, sender) {
 				console.log('changeAction');
-				//this.$.base.commitProperty('tasks[this.projectId]');
 				var taskKey = event.path[2].templateInstance.model.taskKey,
 					taskAttribute = event.path[0].name,
 					taskAttributeValue = event.path[0].value,
@@ -210,18 +277,11 @@
 					fbChildRef = this.$.base.ref.child(taskKey);
 				updateObject[taskAttribute] = taskAttributeValue;
 				fbChildRef.update(updateObject);
-				fbChildRef.on('value', function(snapshot) {
-					console.log(snapshot.val());
-				}, function(errorObject) {
-					console.log('The read failed: ' + errorObject.code);
-				});
-
 			},
 			toggleCollapseAction: function(event, detail, sender) {
 				var taskId = event.target.templateInstance.model.taskKey,
 					taskRow = sender.parentNode.parentNode,
 					descendents = this.getDescendentRows(taskRow);
-
 				if (sender.getAttribute('icon') === 'remove') {
 					sender.setAttribute('icon', 'add');
 					for (var i = descendents.length - 1; i >= 0; i--) {
@@ -240,8 +300,6 @@
 
 		        this.assignedWorkKeys = assignments ? Object.keys(assignments) : [];
 		        sender.nextElementSibling && sender.nextElementSibling.toggle();
-
-		        
 		        console.log(this.assignedWorkKeys);
 			},
 			addAssignmentAction: function(event, detail, sender) {
@@ -249,99 +307,284 @@
 					assignments = this.tasksData[taskKey].assignedWork,
 					fbChildPath = taskKey + '/assignedWork',
 					fbChildRef = this.$.base.ref.child(fbChildPath),
-					newAssignmentRef = fbChildRef.push();
-
-				console.log(fbChildRef);
-				
+					newAssignmentRef = fbChildRef.push();			
 				newAssignmentRef.set({
 					"taskId": taskKey,
 					"resourceId": "",
 					"role": "",
 					"work": 0
 				});
-
 				this.assignedWorkKeys = assignments ? Object.keys(assignments) : [];
-
 			},
-			getDescendentRows: function(taskRow) {
-				if (taskRow) {
-					var ret = [],
-						taskRows = this.shadowRoot.querySelectorAll('tbody tr'),
-						pos = parseInt(taskRow.getAttribute('index')),
-						level = taskRow.getAttribute('level');
-					for (var i = pos + 1; i < taskRows.length; i++) {
-						var ch = taskRows[i];
-						if (ch.getAttribute('level') > level)
-							ret.push(ch);
-						else
-							break;
+
+			getTask: function(taskKey) {
+				return this.tasksData[taskKey];
+			},
+			getParentTask: function(taskKey) {
+				var task = this.tasksData[taskKey];
+				return this.tasksData[task.parentId];
+			},
+			getChildTasks: function(taskKey) {
+				var childTasks = this.filter({parentId:taskKey});
+				if(Object.keys(childTasks).length === 0) {
+					return false;
+				} else {
+					return childTasks;
+				}
+			},
+			getPrecedingTask: function(taskKey) {
+				var index = this.taskKeys.indexOf(taskKey),
+					precedingTask = this.tasksData[this.taskKeys[index - 1]];
+				return precedingTask;
+			},
+			getFollowingTask: function(taskKey) {
+				var index = this.taskKeys.indexOf(taskKey),
+					followingTask = this.tasksData[this.taskKeys[index + 1]];
+				return followingTask;
+			},
+			getPrecedingSiblingTasks: function(taskKey) {
+				var index = this.taskKeys.indexOf(taskKey),
+					task = this.tasksData[taskKey],
+					precedingSiblingTasks = {};
+				for (var i = index - 1; i >= 0; i--) {
+					var precedingTask = this.tasksData[this.taskKeys[i]];
+					if (precedingTask.level === task.level) {
+						precedingSiblingTasks[precedingTask.uid] = precedingTask;	
 					}
-					return ret;
+					if (precedingTask.level < task.level) {
+						break;
+					}
+				};
+				if(Object.keys(precedingSiblingTasks).length === 0) {
+					return false;
+				} else {
+					return precedingSiblingTasks;
+				}
+			},
+			getFirstPrecedingSiblingTask: function(taskKey) {
+				var index = this.taskKeys.indexOf(taskKey),
+					task = this.tasksData[taskKey],
+					firstPrecedingSiblingTask;
+				for (var i = index - 1; i >= 0; i--) {
+					var precedingTask = this.tasksData[this.taskKeys[i]];
+					if (precedingTask.level === task.level) {
+						firstPrecedingSiblingTask = precedingTask;
+						break;
+					}
+					if (precedingTask.level < task.level) {
+						break;
+					}
+				};
+				if(firstPrecedingSiblingTask) {
+					return firstPrecedingSiblingTask;
+				} else {
+					return false;
+				}	
+			},
+			getFollowingSiblingTasks: function(taskKey) {
+				var index = this.taskKeys.indexOf(taskKey),
+					task = this.tasksData[taskKey],
+					followingSiblingTasks = {};
+				for (var i = index + 1; i < this.taskKeys.length; i++) {
+					var followingTask = this.tasksData[this.taskKeys[i]];
+					if (followingTask.level === task.level) {
+						followingSiblingTasks[followingTask.uid] = followingTask;	
+					}
+					if (followingTask.level < task.level) {
+						break;
+					}
+				};
+				if(Object.keys(followingSiblingTasks).length === 0) {
+					return false;
+				} else {
+					return followingSiblingTasks;
+				}
+			},
+			getFirstFollowingSiblingTask: function(taskKey) {
+				var index = this.taskKeys.indexOf(taskKey),
+					task = this.tasksData[taskKey],
+					firstFollowingSiblingTask;
+				for (var i = index + 1; i < this.taskKeys.length; i++) {
+					var followingTask = this.tasksData[this.taskKeys[i]];
+					if (followingTask.level === task.level) {
+						firstFollowingSiblingTask = followingTask;
+						break;
+					}
+					if (followingTask.level < task.level) {
+						break;
+					}
+				};
+				if(firstFollowingSiblingTask) {
+					return firstFollowingSiblingTask;
+				} else {
+					return false;
+				}
+			},
+			getAncestorTasks: function(taskKey) {
+				if(!taskKey) return;
+				var task = this.tasksData[taskKey],
+					parentId = task.parentId,
+					ancestorTasks = {};
+				while(parentId) {
+					var parentTask = this.tasksData[parentId];
+					ancestorTasks[parentId] = parentTask;
+					parentId = parentTask.parentId;
+				}
+				if(Object.keys(ancestorTasks).length === 0) {
+					return false;
+				} else {
+					return ancestorTasks;
 				}
 			},
 			getDescendentTasks: function(taskKey) {
 				if (taskKey) {
-					var descendents = {},
-						tasks = this.tasksData,
-						keys = Object.keys(tasks),
-						numberOfTasks = keys.length,
-						task = tasks[taskKey],
-						index = keys.indexOf(taskKey),
+					var descendentTasks = {},
+						numberOfTasks = this.taskKeys.length,
+						task = this.tasksData[taskKey],
+						index = this.taskKeys.indexOf(taskKey),
 						level = task.level;
 
 					for (var i = index + 1; i < numberOfTasks; i++) {
-						var key = keys[i],
-							followingTask = tasks[key];
+						var key = this.taskKeys[i],
+							followingTask = this.tasksData[key];
 						if (followingTask.level > level)
-							descendents[key] = followingTask;
+							descendentTasks[key] = followingTask;
 						else
 							break;
 					}
-					return descendents;
+					if(Object.keys(descendentTasks).length === 0) {
+						return false;
+					} else {
+						return descendentTasks;
+					}
 				}
 			},
-			move: function(moveKeysArray, referenceKey, relativePosition) {
-				var tasks = this.tasksData;
-				console.log(moveKeysArray);
+			getDescendentRows: function(taskRow) {
+				if (taskRow) {
+					var ret = [],
+						level = taskRow.getAttribute('level'),
+						nextElementSibling = taskRow.nextElementSibling;
+					while(nextElementSibling && nextElementSibling.getAttribute('level') > level) {
+						ret.push(nextElementSibling);
+						nextElementSibling = nextElementSibling.nextElementSibling
+					}
+					return ret;
+				}
+			},
+			hasChild: function(taskKey) {
+				if(this.getChildTasks(taskKey)) {
+					return true;
+				} else {
+					return false;
+				}
+			},
+			updateHasChild: function(taskKey) {
+				var task = this.tasksData[taskKey],
+					hasChild = this.hasChild(taskKey);
+				if(hasChild && task.hasChild != true) {
+					this.tasksRef.child(taskKey).update({
+						"hasChild": true
+					});
+				} else if(!hasChild && task.hasChild === true) {
+					this.tasksRef.child(taskKey).update({
+						"hasChild": false
+					});
+				}
+			},
+			move: function(task, taskDescendents, referenceTask, relativePosition) {
+				// Tasks are always moved above or below the reference task and at the same level (i.e. siblings)
+				var taskDescendentKeys = taskDescendents ? Object.keys(taskDescendents) : 0,
+					levelAdjustment = parseInt(referenceTask.level) - parseInt(task.level),
+					positionA, positionB, positionDifference, positionIncrement, positionInsert;
+
+				if(relativePosition === "above") {
+					var refPrecedingTask = this.getPrecedingTask(referenceTask.uid);
+					positionA = refPrecedingTask ? parseInt(refPrecedingTask.position) : 0,
+					positionB = parseInt(referenceTask.position);
+				} else {
+					// Move to after the last descendent of the reference task
+					var refDescendents = this.getDescendentTasks(referenceTask.uid);
+					if(refDescendents) {
+						var refDescendentKeys = Object.keys(refDescendents),
+							refLastDescendent = refDescendents[refDescendentKeys[refDescendentKeys.length - 1]],
+							refLastDescendentFollowingTask = this.getFollowingTask(refLastDescendent.uid);
+						positionA = parseInt(refLastDescendent.position);
+						positionB = refLastDescendentFollowingTask ? parseInt(refLastDescendentFollowingTask.position) : positionA + 20000;
+					} else {
+						var refFollowingTask = this.getFollowingTask(referenceTask.uid);
+						positionA = parseInt(referenceTask.position);
+						positionB = refFollowingTask.position ? parseInt(refFollowingTask.position) : positionA + 20000;
+					}
+				}
+				positionDifference = positionB - positionA;
+				positionIncrement = Math.round(taskDescendents ? positionDifference / (2 + taskDescendentKeys.length) : positionDifference / 2);
+				positionInsert = positionA + positionIncrement;
+				//Update the task
+				var taskRef = this.tasksRef.child(task.uid),
+					self = this;
+				taskRef.setPriority(positionInsert, function() {
+					self.priorityChanged();
+				});
+				taskRef.update({
+					"position": positionInsert,
+					"parentId": referenceTask.parentId,
+					"level": referenceTask.level
+				});
+				
+				// Update the task descendents
+				for (var i = 0; i < taskDescendentKeys.length; i++) {
+					var descendent = taskDescendents[taskDescendentKeys[i]],
+						descendentRef = this.tasksRef.child(descendent.uid);
+					positionInsert = positionInsert + positionIncrement;
+					descendentRef.setPriority(positionInsert, function() {
+						self.priorityChanged();
+					});
+					descendentRef.update({
+						"position": positionInsert,
+						"level": parseInt(descendent.level) + parseInt(levelAdjustment)
+					});
+				}
+			},
+			insertTask: function(referenceTask, relativePosition) {
+				var self = this,
+					newTaskRef = this.tasksRef.push(),
+					taskTemplateRef = this.rootRef.child('configuration/templates/task');
+				taskTemplateRef.once('value', function(snapshot) {
+					newTaskRef.set(snapshot.val());
+					newTaskRef.update({
+						"uid": newTaskRef.key(),
+						"name": "New Task",
+						"startDate": moment().format('YYYY-MM-DD'),
+						"endDate": moment().format('YYYY-MM-DD'),
+						"createdByUserId": self.user.uid,
+      					"createdTimestamp": Firebase.ServerValue.TIMESTAMP
+					});
+					var newTask = self.tasksData[newTaskRef.key()];
+					self.move(newTask, null, referenceTask, relativePosition);
+				}, function(errorObject) {
+					console.log('The read failed: ' + errorObject.code);
+				});
+			},
+			insertTaskAbove: function() {
+				if (this.selectedTask) {
+					var task = this.tasksData[this.selectedTask];
+					this.insertTask(task, "above");
+				}
 			},
 			insertTaskBelow: function() {
 				if (this.selectedTask) {
-					var selected = this.tasksData[this.selectedTask],
-						selectedPosition = parseInt(selected.position),
-						keys = Object.keys(this.tasksData),
-						selectedIndex = keys.indexOf(this.selectedTask),
-						nextPosition = selectedIndex !== -1 && keys[selectedIndex + 1] ? parseInt(this.tasksData[keys[selectedIndex + 1]].position) : selectedPosition + 20000,
-						newPosition = selectedPosition + ((nextPosition - selectedPosition) / 2),
-						tasksRef = this.$.base.ref,
-						newTaskRef = tasksRef.push(),
-						rootRef = tasksRef.root(),
-						taskTemplateRef = rootRef.child('configuration/templates/task');
-					taskTemplateRef.once('value', function(snapshot) {
-						newTaskRef.setWithPriority(snapshot.val(), newPosition);
-						newTaskRef.update({
-							"uid": newTaskRef.name(),
-							"position": parseInt(newPosition),
-							"level": parseInt(selected.level),
-							"name": "New Task " + newPosition,
-							"startDate": moment().format('YYYY-MM-DD'),
-							"endDate": moment().format('YYYY-MM-DD'),
-							"createdByUserId": "google:105148197807515785380",
-	      					"createdTimestamp": Firebase.ServerValue.TIMESTAMP
-						});
-					}, function(errorObject) {
-						console.log('The read failed: ' + errorObject.code);
-					});
+					var task = this.tasksData[this.selectedTask];
+					this.insertTask(task, "below");
 				}
 			},
 			deleteAction: function() {
 				if (this.selectedTask) {
-					var fbChildPath = this.selectedTask,
-						fbChildRef = this.$.base.ref.child(fbChildPath);
-					fbChildRef.remove();
+					var selectedTaskId = this.selectedTask,
+						taskRef = this.$.base.ref.child(selectedTaskId);
+					taskRef.remove();
 				}
 			},
 			selectAction: function(event, detail, sender) {
-				//console.log('selectAction');
 				var taskKey = detail.item.templateInstance.model.taskKey;
 				if (detail.isSelected) {
 					this.selectedTask = taskKey;
@@ -380,15 +623,13 @@
 				}
 			},
 			filter: function(filterObject, andOr) {
-				var tasks = this.tasksData,
-					taskKeys = Object.keys(tasks),
-					self = this,
-					filteredKeys = taskKeys.filter( function(item) {
-						return self.contains( tasks[item], filterObject, andOr );
+				var self = this,
+					filteredKeys = this.taskKeys.filter( function(item) {
+						return self.contains( self.tasksData[item], filterObject, andOr );
 					}),
 					filteredObjects = {};
 				filteredKeys.forEach( function(element, index, array) {
-					filteredObjects[element] = tasks[element];
+					filteredObjects[element] = self.tasksData[element];
 				});
 				return filteredObjects;
 			},
@@ -404,99 +645,70 @@
 					//this.$.edit.focus();
 				});
 			},
-			insertBefore: function(sourceNode, targetNode) {
 
+			moveUpAction: function() {
+				// no selected task
+				if (!this.selectedTask) return;
+				var task = this.tasksData[this.selectedTask],
+					taskDescendents = this.getDescendentTasks(task.uid),
+					firstPrecedingSiblingTask = this.getFirstPrecedingSiblingTask(task.uid);
+				if(firstPrecedingSiblingTask) {
+					this.move(task, taskDescendents, firstPrecedingSiblingTask, "above");
+				}
 			},
-			insertAfter: function(sourceNode, targetNode) {},
-			/*
-				move: function (old_index, new_index) {
-				},
-				*/
-			moveUpAction: function() {},
-			moveDownAction: function() {},
+			moveDownAction: function() {
+				// no selected task
+				if (!this.selectedTask) return;
+				var task = this.tasksData[this.selectedTask],
+					taskDescendents = this.getDescendentTasks(task.uid),
+					firstFollowingSiblingTask = this.getFirstFollowingSiblingTask(task.uid);
+				if(firstFollowingSiblingTask) {
+					this.move(task, taskDescendents, firstFollowingSiblingTask, "below");
+				}
+			},
 			promoteAction: function() {
 				// no selected task
 				if (!this.selectedTask) return;
-				var tasks = this.tasksData,
-					selectedTask = tasks[this.selectedTask];
+				var task = this.tasksData[this.selectedTask];
 				// Selected task is already at the root level
-				if (selectedTask.level <= 0) return;
-				var keys = Object.keys(tasks),
-					index = keys.indexOf(this.selectedTask);
+				if (task.level <= 0) return;
+				var taskIndex = this.taskKeys.indexOf(task.uid);
 				// Selected task is the first task
-				if (index === 0) return;
-				var descendents = this.getDescendentTasks(this.selectedTask),
-					descendentKeys = Object.keys(descendents),
-					tasksRef = this.$.base.ref;
-				// update the selected task's level
-				tasksRef.child(this.selectedTask).update({
-					level: selectedTask.level - 1
-				});
-				// update descendent levels
-				for (var i = descendentKeys.length - 1; i >= 0; i--) {
-					var descendentKey = descendentKeys[i],
-						descendent = descendents[descendentKey];
-					tasksRef.child(descendent.uid).update({
-						level: descendent.level - 1
-					});
-				};
-				// find the last sibling and if it exists, move selected task and its descendents after it
-				var followingSibling = false;
-				for (var i = index + 1; i < keys.length; i++) {
-					var followingTask = tasks[keys[i]];
-					if (followingTask.level === selectedTask.level) {
-						followingSibling = followingTask;	
-					}
-					if (followingTask.level < selectedTask.level) {
-						break;
-					}
-				};
-				console.log('lastSibling: '+followingSibling);
-				if (followingSibling) {
-					var moveKeysArray = [],
-						referenceKey = followingSibling.uid;
-					moveKeysArray.push(this.selectedTask);
-					console.log(descendents);
-					moveKeysArray.concat(descendentKeys);
-					this.move(moveKeysArray, referenceKey, 'below');
-				} else {
-					// if no following or preceeding siblings, set parent hasChild value to false
-					for (var i = index - 1; i >= 0; i--) {
-						var previousTask = tasks[keys[i]];
-						if ( previousTask.level === (selectedTask.level - 1) && i === (index - 1) ) {
-							tasksRef.child(previousTask.uid).update({
-								hasChild: false
-							});
-						}
-					};
-				}
+				if (taskIndex === 0) return;
+				// Selected task has no parent
+				if (!task.parentId) return;
+				// Move to after the parent will move the task to the same level as the parent and after all the parent's descendents
+				var taskDescendents = this.getDescendentTasks(task.uid),
+					parent = this.tasksData[task.parentId];
+				this.move(task, taskDescendents, parent, 'after');
+				this.updateHasChild(parent.uid);
 			},
 			demoteAction: function() {
 				if (!this.selectedTask) return;
-				var tasks = this.tasksData,
-					keys = Object.keys(tasks),
-					index = keys.indexOf(this.selectedTask),
-					tasksRef = this.$.base.ref;
-				if (index !== 0) {
-					var selectedTask = tasks[this.selectedTask],
-						previousTask = tasks[keys[index - 1]];
-					if (previousTask.level >= selectedTask.level) {
-						var descendents = this.getDescendentTasks(this.selectedTask),
-							descendentKeys = Object.keys(descendents);
-						if (previousTask.level === selectedTask.level) {
-							tasksRef.child(previousTask.uid).update({
-								hasChild: true
-							});
-						}
-						tasksRef.child(selectedTask.uid).update({
-							level: selectedTask.level + 1
+				var task = this.tasksData[this.selectedTask],
+					firstPrecedingSiblingTask = this.getFirstPrecedingSiblingTask(task.uid);
+				// Can only demote if there is a preceding sibling
+				if(firstPrecedingSiblingTask) {
+					var newParentId = firstPrecedingSiblingTask.uid,
+						descendentTasks = this.getDescendentTasks(task.uid);
+					// Update the task
+					this.tasksRef.child(task.uid).update({
+						level: task.level + 1,
+						parentId: firstPrecedingSiblingTask.uid
+					});
+					// Update the new parent task if necessary
+					if(firstPrecedingSiblingTask.hasChild != "true") {
+						this.tasksRef.child(firstPrecedingSiblingTask.uid).update({
+							hasChild: true
 						});
-						for (var i = descendentKeys.length - 1; i >= 0; i--) {
-							var descendentKey = descendentKeys[i],
-								descendent = descendents[descendentKey];
-							descendent.level = descendent.level + 1;
-							tasksRef.child(descendent.uid).update({
-								level: descendent.level + 1
+					}
+					// Update the tasks decendent tasks if there are any
+					if(descendentTasks) {
+						var descendentTaskKeys = Object.keys(descendentTasks);
+						for (var i = descendentTaskKeys.length - 1; i >= 0; i--) {
+							var descendentTask = descendentTasks[descendentTaskKeys[i]];
+							this.tasksRef.child(descendentTask.uid).update({
+								level: descendentTask.level + 1
 							});
 						};
 					}

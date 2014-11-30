@@ -17,8 +17,7 @@
     min-width: 5px;
     height: 30px; }
   #task-grid-table tbody th, #task-grid-table tbody td {
-    overflow: hidden;
-    padding: 4px 2px; }
+    overflow: hidden; }
     #task-grid-table tbody th.noClip, #task-grid-table tbody td.noClip {
       overflow: visible; }
     #task-grid-table tbody th input, #task-grid-table tbody td input {
@@ -34,6 +33,21 @@
 
 .hidden {
   display: none; }
+
+.task-name {
+  display: inline-block;
+  vertical-align: top;
+  padding: 10px 0; }
+
+paper-icon-button.expander {
+  margin: 0px -10px 0 -26px; }
+  paper-icon-button.expander::shadow #icon {
+    width: 18px;
+    height: 18px; }
+
+tbody paper-icon-button::shadow #icon {
+  width: 18px;
+  height: 18px; }
 
 .core-selected td, .core-selected input {
   background-color: #FFFF99; }
