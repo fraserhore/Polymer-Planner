@@ -90,9 +90,7 @@
 								<td>
 									<input name="endDate" value="{{tasksData[taskKey].endDate}}" min="{{tasksData[taskKey].startDate}}" type="date" on-change="{{changeAction}}">
 								</td>
-								<td>
-									<input name="duration" value="{{tasksData[taskKey].duration}}" on-change="{{changeAction}}">
-								</td>
+								<td>{{tasksData[taskKey].duration}} d</td>
 								<td>
 									<input name="depends" value="{{tasksData[taskKey].depends}}" on-change="{{changeAction}}">
 								</td>
@@ -146,9 +144,9 @@
 									</template>
 									<span class="task-name">{{tasksData[taskKey].name}}</span>
 								</td>
-								<td>{{tasksData[taskKey].startDate}}</td>
-								<td>{{tasksData[taskKey].endDate}}</td>
-								<td>{{tasksData[taskKey].duration}}</td>
+								<td>{{tasksData[taskKey].startDate | date('dd/MM/yyyy')}}</td>
+								<td>{{tasksData[taskKey].endDate | date('dd/MM/yyyy')}}</td>
+								<td>{{tasksData[taskKey].duration}} d</td>
 								<td>{{tasksData[taskKey].depends}}</td>
 								<td>
 									<paper-icon-button id="trigger-{{taskKey}}" icon="expand-more" on-tap="{{toggleResourcesAction}}">
@@ -193,6 +191,7 @@
 		</section>
 	</template>
 	<script src="../../bower_components/moment/moment.js"></script>
+	<script src="../../bower_components/moment/momentjs-business/momentjs-business.js"></script>
 	<script>
 	(function() {
 		'use strict';
@@ -262,11 +261,10 @@
 			},
 
 			testAction: function() {
-				this.tasksRef.orderByPriority().once('value', function(snapshot) {
-                	console.log(snapshot.val());
-                	//this.tasksData = snapshot.val();
-                	//this.taskKeys = Object.keys(this.tasksData);
-                }, this);	
+				this.updateDuration(this.selectedTask);
+				// this.tasksRef.orderByPriority().once('value', function(snapshot) {
+                // 	console.log(snapshot.val());
+                // }, this);	
 			},
 			changeAction: function(event, detail, sender) {
 				console.log('changeAction');
@@ -275,6 +273,10 @@
 					taskAttributeValue = event.path[0].value,
 					updateObject = {},
 					fbChildRef = this.$.base.ref.child(taskKey);
+				if(taskAttribute === 'startDate' || taskAttribute === 'endDate') {
+					updateObject['duration'] = this.getDuration(taskKey);
+				}
+				console.log(taskAttribute);
 				updateObject[taskAttribute] = taskAttributeValue;
 				fbChildRef.update(updateObject);
 			},
@@ -490,6 +492,19 @@
 						"hasChild": false
 					});
 				}
+			},
+			getDuration: function(taskKey) {
+				var task = this.tasksData[taskKey],
+					startDate = moment(task.startDate).subtract(12, 'hours'),
+					endDate = moment(task.endDate).add(12, 'hours'),
+					duration = endDate.businessDiff(startDate, 'days');
+				return duration;
+			},
+			updateDuration: function(taskKey) {
+				var duration = this.getDuration(taskKey);
+				this.tasksRef.child(taskKey).update({
+					"duration": duration
+				});
 			},
 			move: function(task, taskDescendents, referenceTask, relativePosition) {
 				// Tasks are always moved above or below the reference task and at the same level (i.e. siblings)
