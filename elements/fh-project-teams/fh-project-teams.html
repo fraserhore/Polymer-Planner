@@ -88,7 +88,7 @@
                 var self = this;
                 this.rootRef = this.$.base.ref.root();
                 this.userAuthData = document.querySelector('fh-firebase-login').user;
-                this.userRef = this.rootRef.child('users/'+this.userAuthData.uid);
+                this.userRef = this.userAuthData ? this.rootRef.child('users/'+this.userAuthData.uid) : null;
                 this.userRef.once('value', function(snapshot) {
                     self.user = snapshot.val();
                 }, function(errorObject) {

@@ -350,7 +350,7 @@
                     var userRef = self.usersRef.child(authData.uid);
                     userRef.once('value', function(snapshot) {
                         var user = snapshot.val();
-                        if (!user) {
+                        if (!user.uid) {
                         	self.usersRef.child(authData.uid).set(authData);
                         }
                     });
