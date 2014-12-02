@@ -285,7 +285,6 @@
                 recognition.onresult = function(event) {
 
                     console.log(event.results[0][0].transcript);
-                    console.log(Object.keys(attribute));
                     if(attribute.constructor.name === 'MouseEvent') {
                     	console.log('true');
                         switch (event.results[0][0].transcript) {
