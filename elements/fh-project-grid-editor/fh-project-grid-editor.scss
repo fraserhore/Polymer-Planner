@@ -72,6 +72,9 @@ tbody paper-icon-button::shadow #icon {
 	top: 50px;
 	left: 0px;
 	height: 100%;
+	table {
+		background: lightgrey;
+	}
 }
 
 .gdfCellWrap {

@@ -56,6 +56,8 @@ tbody paper-icon-button::shadow #icon {
   top: 50px;
   left: 0px;
   height: 100%; }
+  .assigned-resources-dropdown table {
+    background: lightgrey; }
 
 .gdfCellWrap {
   border: 0 none;
