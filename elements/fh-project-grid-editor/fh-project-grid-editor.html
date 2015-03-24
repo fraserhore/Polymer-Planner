@@ -359,10 +359,16 @@
                             case "move down":
                                 self.moveDownAction();
                                 break;
+                            case "select above":
+                                self.selectAboveAction();
+                                break;
+                            case "select below":
+                                self.selectBelowAction();
+                                break;
                             case "edit":
                                 self.editAction();
                                 self.testAction('name');
-                                //self.voiceEdit();
+                                self.voiceEdit();
                                 break;
                             default:
                                 alert("I didn't understand, please try again");
@@ -378,6 +384,7 @@
                 // }, this);	
             },
             voiceEdit: function(attribute) {
+                console.log('voiceEdit'+' attribute: '+attribute);
                 var self = this,
                     task = this.tasksData[this.selectedTask],
                     recognition = new webkitSpeechRecognition();
@@ -390,6 +397,7 @@
                         self.voiceEdit(event.results[0][0].transcript);
                     }
                 }
+                recognition.start();
             },
             voiceChangeAction: function(taskKey, attribute, value) {
                 console.log('voiceChangeAction');
@@ -776,10 +784,13 @@
                         if(usersData && assignment.resourceId) {
                             userName = usersData[assignment.resourceId].google.cachedUserProfile.given_name;
                         }
-	            		assignmentSummaryString += ", "+userName+": "+work;
+                        if(i !== 0) {
+                            assignmentSummaryString += ", ";
+                        }
+	            		assignmentSummaryString += userName+": "+work;
 	            		assignedWork += parseInt(work);
 	            	};
-	            	return 'total: '+assignedWork+assignmentSummaryString;
+	            	return assignmentSummaryString;
 	            }
             },
             updateDates: function(taskKey) {
@@ -912,6 +923,10 @@
                 } else {
                     this.editingTask = '';
                 }
+            },
+            selectAboveAction: function() {
+                console.dir(this.$.taskSelector);
+                this.$.taskSelector.selectPrevious();
             },
             tapAction: function(event, detail, sender) {
                 //console.log('tapAction');
