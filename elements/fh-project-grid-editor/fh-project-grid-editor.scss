@@ -7,13 +7,15 @@
     border-collapse: separate;
     border-spacing: 0;
     td, th {
+				max-width: 200px;
+				white-space: normal;
+				padding: 0 10px;
         vertical-align: middle;
         overflow: hidden;
         text-overflow: clip;
-        white-space: nowrap;
         font-size: 14px;
         border-bottom: 1px solid #eee;
-        border-right: 1px solid #b0b0b0;
+				border-right: 1px solid #eee;
     }
     thead {
         th {
